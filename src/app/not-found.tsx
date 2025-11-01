@@ -3,16 +3,18 @@
  * Displayed when a route doesn't exist
  */
 
-import { Button } from '@/components/ui/button'
+"use client";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { FileQuestion, Home, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+} from "@/components/ui/card";
+import { FileQuestion, Home, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -42,15 +44,13 @@ export default function NotFound() {
                 Go to Dashboard
               </Link>
             </Button>
-            <Button asChild variant="outline" onClick={() => window.history.back()}>
-              <Link href="#">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Go Back
-              </Link>
+            <Button variant="outline" onClick={() => window.history.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
