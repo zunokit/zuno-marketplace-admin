@@ -34,6 +34,72 @@ interface TableData {
   totalPages: number
 }
 
+export interface TableMetadata {
+  tableName: string
+  schemaName: string
+  tableSize: string
+  indexesSize: string
+  totalSize: string
+  rowCountEstimate: number
+  lastVacuum: Date | null
+  lastAnalyze: Date | null
+  lastAutoVacuum: Date | null
+  lastAutoAnalyze: Date | null
+  toastSize: string | null
+  hasToastTable: boolean
+}
+
+export interface TableConstraint {
+  constraintName: string
+  constraintType: 'PRIMARY KEY' | 'FOREIGN KEY' | 'UNIQUE' | 'CHECK'
+  columnNames: string[]
+  definition: string
+  referencedTable: string | null
+  referencedColumns: string[] | null
+  updateRule: string | null
+  deleteRule: string | null
+}
+
+export interface TableIndex {
+  indexName: string
+  indexType: string
+  columnNames: string[]
+  isUnique: boolean
+  isPrimary: boolean
+  indexSize: string
+  indexDef: string
+  tablespace: string | null
+}
+
+export interface TableDependency {
+  tableName: string
+  schemaName: string
+  dependencyType: 'referenced_by' | 'references'
+  constraintName: string
+  foreignKeyColumns: string[]
+  referencedColumns: string[]
+  updateRule: string
+  deleteRule: string
+}
+
+export interface DatabaseStatistics {
+  totalSize: string
+  totalSizeBytes: number
+  largestTables: Array<{
+    tableName: string
+    schemaName: string
+    tableSize: string
+    indexesSize: string
+    totalSize: string
+    rowCountEstimate: number
+    tableSizeBytes: number
+  }>
+  totalTables: number
+  totalIndexes: number
+  totalRowsEstimate: number
+  dataToIndexRatio: number
+}
+
 /**
  * Get all tables in a project database
  */
@@ -246,4 +312,476 @@ export async function getTableData(
       totalPages,
     }
   }, 'getTableData')
+}
+
+/**
+ * Get detailed metadata for a specific table
+ * Includes size statistics, vacuum/analyze timestamps, and TOAST table info
+ */
+export async function getTableMetadata(projectId: string, tableName: string): Promise<TableMetadata> {
+  return errorHandler(async () => {
+    const db = await getProjectDb(projectId)
+
+    const result = await db.execute<{
+      table_name: string
+      schema_name: string
+      table_size: string
+      indexes_size: string
+      total_size: string
+      row_count_estimate: string
+      last_vacuum: Date | null
+      last_analyze: Date | null
+      last_autovacuum: Date | null
+      last_autoanalyze: Date | null
+      toast_size: string | null
+      has_toast_table: boolean
+    }>(sql`
+      SELECT
+        c.relname AS table_name,
+        n.nspname AS schema_name,
+        pg_size_pretty(pg_table_size(c.oid)) AS table_size,
+        pg_size_pretty(pg_indexes_size(c.oid)) AS indexes_size,
+        pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
+        c.reltuples::bigint AS row_count_estimate,
+        pg_stat_get_last_vacuum_time(c.oid) AS last_vacuum,
+        pg_stat_get_last_analyze_time(c.oid) AS last_analyze,
+        pg_stat_get_last_autovacuum_time(c.oid) AS last_autovacuum,
+        pg_stat_get_last_autoanalyze_time(c.oid) AS last_autoanalyze,
+        CASE
+          WHEN c.reltoastrelid > 0 THEN pg_size_pretty(pg_total_relation_size(c.reltoastrelid))
+          ELSE NULL
+        END AS toast_size,
+        c.reltoastrelid > 0 AS has_toast_table
+      FROM pg_class c
+      LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relname = ${tableName}
+        AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND c.relkind = 'r'
+    `)
+
+    if (!result || result.length === 0) {
+      throw new Error(`Table ${tableName} not found`)
+    }
+
+    const row = result[0]
+
+    logger.debug('Retrieved table metadata', {
+      projectId,
+      tableName,
+      totalSize: row.total_size,
+      rowCount: row.row_count_estimate,
+    })
+
+    return {
+      tableName: row.table_name,
+      schemaName: row.schema_name,
+      tableSize: row.table_size,
+      indexesSize: row.indexes_size,
+      totalSize: row.total_size,
+      rowCountEstimate: Number(row.row_count_estimate),
+      lastVacuum: row.last_vacuum,
+      lastAnalyze: row.last_analyze,
+      lastAutoVacuum: row.last_autovacuum,
+      lastAutoAnalyze: row.last_autoanalyze,
+      toastSize: row.toast_size,
+      hasToastTable: row.has_toast_table,
+    }
+  }, 'getTableMetadata')
+}
+
+/**
+ * Get all constraints for a specific table
+ * Includes PRIMARY KEY, FOREIGN KEY, UNIQUE, and CHECK constraints
+ */
+export async function getTableConstraints(
+  projectId: string,
+  tableName: string
+): Promise<TableConstraint[]> {
+  return errorHandler(async () => {
+    const db = await getProjectDb(projectId)
+
+    const result = await db.execute<{
+      constraint_name: string
+      constraint_type: 'PRIMARY KEY' | 'FOREIGN KEY' | 'UNIQUE' | 'CHECK'
+      column_names: string
+      definition: string
+      referenced_table: string | null
+      referenced_columns: string | null
+      update_rule: string | null
+      delete_rule: string | null
+    }>(sql`
+      SELECT
+        tc.constraint_name,
+        tc.constraint_type,
+        string_agg(DISTINCT kcu.column_name, ', ' ORDER BY kcu.column_name) AS column_names,
+        pg_get_constraintdef(pgc.oid) AS definition,
+        ccu.table_name AS referenced_table,
+        string_agg(DISTINCT ccu.column_name, ', ' ORDER BY ccu.column_name) AS referenced_columns,
+        rc.update_rule,
+        rc.delete_rule
+      FROM information_schema.table_constraints tc
+      LEFT JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      LEFT JOIN information_schema.constraint_column_usage ccu
+        ON tc.constraint_name = ccu.constraint_name
+        AND tc.table_schema = ccu.table_schema
+      LEFT JOIN information_schema.referential_constraints rc
+        ON tc.constraint_name = rc.constraint_name
+        AND tc.table_schema = rc.constraint_schema
+      LEFT JOIN pg_constraint pgc
+        ON pgc.conname = tc.constraint_name
+      WHERE tc.table_name = ${tableName}
+        AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
+      GROUP BY
+        tc.constraint_name,
+        tc.constraint_type,
+        ccu.table_name,
+        rc.update_rule,
+        rc.delete_rule,
+        pgc.oid
+      ORDER BY
+        CASE tc.constraint_type
+          WHEN 'PRIMARY KEY' THEN 1
+          WHEN 'FOREIGN KEY' THEN 2
+          WHEN 'UNIQUE' THEN 3
+          WHEN 'CHECK' THEN 4
+        END,
+        tc.constraint_name
+    `)
+
+    logger.debug('Retrieved table constraints', {
+      projectId,
+      tableName,
+      constraintCount: result.length,
+    })
+
+    return result.map((row) => ({
+      constraintName: row.constraint_name,
+      constraintType: row.constraint_type,
+      columnNames: row.column_names ? row.column_names.split(', ') : [],
+      definition: row.definition,
+      referencedTable: row.referenced_table,
+      referencedColumns: row.referenced_columns ? row.referenced_columns.split(', ') : null,
+      updateRule: row.update_rule,
+      deleteRule: row.delete_rule,
+    }))
+  }, 'getTableConstraints')
+}
+
+/**
+ * Get all indexes for a specific table
+ * Includes index type, columns, size, and definition
+ */
+export async function getTableIndexes(projectId: string, tableName: string): Promise<TableIndex[]> {
+  return errorHandler(async () => {
+    const db = await getProjectDb(projectId)
+
+    const result = await db.execute<{
+      index_name: string
+      index_type: string
+      column_names: string
+      is_unique: boolean
+      is_primary: boolean
+      index_size: string
+      index_def: string
+      tablespace: string | null
+    }>(sql`
+      SELECT
+        i.relname AS index_name,
+        am.amname AS index_type,
+        string_agg(a.attname, ', ' ORDER BY array_position(ix.indkey, a.attnum)) AS column_names,
+        ix.indisunique AS is_unique,
+        ix.indisprimary AS is_primary,
+        pg_size_pretty(pg_relation_size(i.oid)) AS index_size,
+        pg_get_indexdef(i.oid) AS index_def,
+        ts.spcname AS tablespace
+      FROM pg_class t
+      JOIN pg_index ix ON t.oid = ix.indrelid
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      JOIN pg_am am ON i.relam = am.oid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      LEFT JOIN pg_tablespace ts ON ts.oid = i.reltablespace
+      CROSS JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS u(attnum, ord)
+      LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = u.attnum
+      WHERE t.relname = ${tableName}
+        AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND t.relkind = 'r'
+      GROUP BY
+        i.relname,
+        am.amname,
+        ix.indisunique,
+        ix.indisprimary,
+        i.oid,
+        ts.spcname,
+        ix.indkey
+      ORDER BY
+        ix.indisprimary DESC,
+        ix.indisunique DESC,
+        i.relname
+    `)
+
+    logger.debug('Retrieved table indexes', {
+      projectId,
+      tableName,
+      indexCount: result.length,
+    })
+
+    return result.map((row) => ({
+      indexName: row.index_name,
+      indexType: row.index_type,
+      columnNames: row.column_names ? row.column_names.split(', ') : [],
+      isUnique: row.is_unique,
+      isPrimary: row.is_primary,
+      indexSize: row.index_size,
+      indexDef: row.index_def,
+      tablespace: row.tablespace,
+    }))
+  }, 'getTableIndexes')
+}
+
+/**
+ * Get table dependencies (foreign key relationships)
+ * Shows both tables that depend on this table and tables this table depends on
+ */
+export async function getTableDependencies(
+  projectId: string,
+  tableName: string
+): Promise<TableDependency[]> {
+  return errorHandler(async () => {
+    const db = await getProjectDb(projectId)
+
+    // Get tables that reference this table (dependent tables)
+    const referencedBy = await db.execute<{
+      table_name: string
+      schema_name: string
+      constraint_name: string
+      foreign_key_columns: string
+      referenced_columns: string
+      update_rule: string
+      delete_rule: string
+    }>(sql`
+      SELECT
+        tc.table_name,
+        tc.table_schema AS schema_name,
+        tc.constraint_name,
+        string_agg(DISTINCT kcu.column_name, ', ' ORDER BY kcu.column_name) AS foreign_key_columns,
+        string_agg(DISTINCT ccu.column_name, ', ' ORDER BY ccu.column_name) AS referenced_columns,
+        rc.update_rule,
+        rc.delete_rule
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      JOIN information_schema.constraint_column_usage ccu
+        ON tc.constraint_name = ccu.constraint_name
+        AND tc.table_schema = ccu.table_schema
+      JOIN information_schema.referential_constraints rc
+        ON tc.constraint_name = rc.constraint_name
+        AND tc.table_schema = rc.constraint_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND ccu.table_name = ${tableName}
+        AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
+      GROUP BY
+        tc.table_name,
+        tc.table_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule
+      ORDER BY tc.table_name
+    `)
+
+    // Get tables this table references (dependencies)
+    const references = await db.execute<{
+      table_name: string
+      schema_name: string
+      constraint_name: string
+      foreign_key_columns: string
+      referenced_columns: string
+      update_rule: string
+      delete_rule: string
+    }>(sql`
+      SELECT
+        ccu.table_name,
+        ccu.table_schema AS schema_name,
+        tc.constraint_name,
+        string_agg(DISTINCT kcu.column_name, ', ' ORDER BY kcu.column_name) AS foreign_key_columns,
+        string_agg(DISTINCT ccu.column_name, ', ' ORDER BY ccu.column_name) AS referenced_columns,
+        rc.update_rule,
+        rc.delete_rule
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      JOIN information_schema.constraint_column_usage ccu
+        ON tc.constraint_name = ccu.constraint_name
+        AND tc.table_schema = ccu.table_schema
+      JOIN information_schema.referential_constraints rc
+        ON tc.constraint_name = rc.constraint_name
+        AND tc.table_schema = rc.constraint_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_name = ${tableName}
+        AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
+      GROUP BY
+        ccu.table_name,
+        ccu.table_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule
+      ORDER BY ccu.table_name
+    `)
+
+    const dependencies: TableDependency[] = [
+      ...referencedBy.map((row) => ({
+        tableName: row.table_name,
+        schemaName: row.schema_name,
+        dependencyType: 'referenced_by' as const,
+        constraintName: row.constraint_name,
+        foreignKeyColumns: row.foreign_key_columns ? row.foreign_key_columns.split(', ') : [],
+        referencedColumns: row.referenced_columns ? row.referenced_columns.split(', ') : [],
+        updateRule: row.update_rule,
+        deleteRule: row.delete_rule,
+      })),
+      ...references.map((row) => ({
+        tableName: row.table_name,
+        schemaName: row.schema_name,
+        dependencyType: 'references' as const,
+        constraintName: row.constraint_name,
+        foreignKeyColumns: row.foreign_key_columns ? row.foreign_key_columns.split(', ') : [],
+        referencedColumns: row.referenced_columns ? row.referenced_columns.split(', ') : [],
+        updateRule: row.update_rule,
+        deleteRule: row.delete_rule,
+      })),
+    ]
+
+    logger.debug('Retrieved table dependencies', {
+      projectId,
+      tableName,
+      referencedByCount: referencedBy.length,
+      referencesCount: references.length,
+    })
+
+    return dependencies
+  }, 'getTableDependencies')
+}
+
+/**
+ * Get database-wide statistics
+ * Includes total size, largest tables, and index/data ratios
+ */
+export async function getDatabaseStatistics(projectId: string): Promise<DatabaseStatistics> {
+  return errorHandler(async () => {
+    const db = await getProjectDb(projectId)
+
+    // Get total database size
+    const sizeResult = await db.execute<{
+      total_size: string
+      total_size_bytes: string
+    }>(sql`
+      SELECT
+        pg_size_pretty(pg_database_size(current_database())) AS total_size,
+        pg_database_size(current_database())::bigint AS total_size_bytes
+    `)
+
+    const totalSize = sizeResult[0]?.total_size || '0 bytes'
+    const totalSizeBytes = Number(sizeResult[0]?.total_size_bytes || 0)
+
+    // Get largest tables with detailed size information
+    const largestTablesResult = await db.execute<{
+      table_name: string
+      schema_name: string
+      table_size: string
+      indexes_size: string
+      total_size: string
+      row_count_estimate: string
+      table_size_bytes: string
+    }>(sql`
+      SELECT
+        c.relname AS table_name,
+        n.nspname AS schema_name,
+        pg_size_pretty(pg_table_size(c.oid)) AS table_size,
+        pg_size_pretty(pg_indexes_size(c.oid)) AS indexes_size,
+        pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
+        c.reltuples::bigint AS row_count_estimate,
+        pg_total_relation_size(c.oid)::bigint AS table_size_bytes
+      FROM pg_class c
+      LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND c.relkind = 'r'
+      ORDER BY pg_total_relation_size(c.oid) DESC
+      LIMIT 10
+    `)
+
+    // Get total counts
+    const countsResult = await db.execute<{
+      total_tables: string
+      total_indexes: string
+      total_rows_estimate: string
+    }>(sql`
+      SELECT
+        COUNT(DISTINCT c.relname)::bigint AS total_tables,
+        (
+          SELECT COUNT(*)::bigint
+          FROM pg_class ic
+          LEFT JOIN pg_namespace in_n ON in_n.oid = ic.relnamespace
+          WHERE in_n.nspname NOT IN ('pg_catalog', 'information_schema')
+            AND ic.relkind = 'i'
+        ) AS total_indexes,
+        SUM(c.reltuples)::bigint AS total_rows_estimate
+      FROM pg_class c
+      LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND c.relkind = 'r'
+    `)
+
+    const counts = countsResult[0] || {
+      total_tables: '0',
+      total_indexes: '0',
+      total_rows_estimate: '0',
+    }
+
+    // Calculate data to index ratio
+    const dataIndexRatioResult = await db.execute<{
+      data_size: string
+      index_size: string
+    }>(sql`
+      SELECT
+        SUM(pg_table_size(c.oid))::bigint AS data_size,
+        SUM(pg_indexes_size(c.oid))::bigint AS index_size
+      FROM pg_class c
+      LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND c.relkind = 'r'
+    `)
+
+    const dataSize = Number(dataIndexRatioResult[0]?.data_size || 0)
+    const indexSize = Number(dataIndexRatioResult[0]?.index_size || 0)
+    const dataToIndexRatio = dataSize > 0 ? indexSize / dataSize : 0
+
+    logger.info('Retrieved database statistics', {
+      projectId,
+      totalSize,
+      totalTables: counts.total_tables,
+      totalIndexes: counts.total_indexes,
+      dataToIndexRatio: dataToIndexRatio.toFixed(2),
+    })
+
+    return {
+      totalSize,
+      totalSizeBytes,
+      largestTables: largestTablesResult.map((row) => ({
+        tableName: row.table_name,
+        schemaName: row.schema_name,
+        tableSize: row.table_size,
+        indexesSize: row.indexes_size,
+        totalSize: row.total_size,
+        rowCountEstimate: Number(row.row_count_estimate),
+        tableSizeBytes: Number(row.table_size_bytes),
+      })),
+      totalTables: Number(counts.total_tables),
+      totalIndexes: Number(counts.total_indexes),
+      totalRowsEstimate: Number(counts.total_rows_estimate),
+      dataToIndexRatio,
+    }
+  }, 'getDatabaseStatistics')
 }
