@@ -138,21 +138,21 @@ describe('Logger Utility', () => {
     const originalEnv = process.env.NODE_ENV
 
     afterEach(() => {
-      process.env.NODE_ENV = originalEnv
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true })
     })
 
     it('should work in test environment without throwing', () => {
-      process.env.NODE_ENV = 'test'
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true })
       expect(() => logger.info('Test environment message')).not.toThrow()
     })
 
     it('should work in development environment without throwing', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true })
       expect(() => logger.info('Development message')).not.toThrow()
     })
 
     it('should work in production environment without throwing', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true })
       expect(() => logger.info('Production message')).not.toThrow()
     })
   })

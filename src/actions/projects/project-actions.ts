@@ -5,6 +5,7 @@
  * Allows dynamic creation, update, and deletion of projects
  */
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
@@ -46,7 +47,7 @@ export async function getAllProjectsAction(): Promise<ServerActionResponse> {
 
     return serverActionSuccess(projects)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -84,7 +85,7 @@ export async function getProjectByIdAction(projectId: string): Promise<ServerAct
 
     return serverActionSuccess(project)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -122,12 +123,14 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Se
       const [newProject] = await db
         .insert(organizationTable)
         .values({
+          id: randomUUID(),
           name: validatedInput.name,
           slug: validatedInput.slug,
           projectType: validatedInput.projectType,
           databaseUrl: encryptedDatabaseUrl,
           logo: validatedInput.logo || null,
-          metadata: validatedInput.metadata || null,
+          metadataJson: validatedInput.metadata || null,
+          createdAt: new Date(),
         })
         .returning()
 
@@ -150,7 +153,7 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Se
 
     return serverActionSuccess(project, 'Project created successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -198,7 +201,7 @@ export async function updateProjectAction(input: UpdateProjectInput): Promise<Se
       if (validatedInput.slug) updateData.slug = validatedInput.slug
       if (validatedInput.projectType) updateData.projectType = validatedInput.projectType
       if (validatedInput.logo !== undefined) updateData.logo = validatedInput.logo
-      if (validatedInput.metadata !== undefined) updateData.metadata = validatedInput.metadata
+      if (validatedInput.metadata !== undefined) updateData.metadataJson = validatedInput.metadata
 
       // Encrypt database URL if updating
       if (validatedInput.databaseUrl) {
@@ -231,7 +234,7 @@ export async function updateProjectAction(input: UpdateProjectInput): Promise<Se
 
     return serverActionSuccess(project, 'Project updated successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -275,7 +278,7 @@ export async function deleteProjectAction(projectId: string): Promise<ServerActi
 
     return serverActionSuccess({ deleted: true }, 'Project deleted successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -324,7 +327,7 @@ export async function testProjectConnectionAction(databaseUrl: string): Promise<
 
     return serverActionSuccess(result)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

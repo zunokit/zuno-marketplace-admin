@@ -115,17 +115,33 @@ export default function DataBrowserPage() {
     ])
 
     if (dataResult.success && dataResult.data && schemaResult.success && schemaResult.data) {
-      const tableDataResponse = dataResult.data as { data: Record<string, unknown>[] }
-      const schemaData = schemaResult.data as {
-        columns: FieldSchema[]
-      }
+      const tableDataResponse = dataResult.data as { rows: Record<string, unknown>[] }
+      const schemaDataRaw = schemaResult.data as {
+        columnName: string
+        dataType: string
+        isNullable: boolean
+        defaultValue: string | null
+        isPrimaryKey: boolean
+      }[]
 
-      setTableData(tableDataResponse.data)
-      setTableSchema(schemaData.columns)
+      // Map ColumnInfo to FieldSchema
+      const schemaData: FieldSchema[] = schemaDataRaw.map((col) => ({
+        name: col.columnName,
+        type: col.dataType,
+        nullable: col.isNullable,
+        defaultValue: col.defaultValue,
+        isPrimaryKey: col.isPrimaryKey,
+        isForeignKey: false, // TODO: Add foreign key detection
+        foreignKeyTable: null,
+        foreignKeyColumn: null,
+      }))
+
+      setTableData(tableDataResponse.rows)
+      setTableSchema(schemaData)
 
       // Generate columns from schema with actions
       const generatedColumns: ColumnDef<Record<string, unknown>>[] = [
-        ...schemaData.columns.map((col): ColumnDef<Record<string, unknown>> => ({
+        ...schemaData.map((col): ColumnDef<Record<string, unknown>> => ({
           accessorKey: col.name,
           header: ({ column }) => (
             <DataTableColumnHeader column={column} title={col.name} />

@@ -5,14 +5,14 @@
  * Manage organization members, invitations, and roles
  */
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
-import { eq, and, or } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
   member as memberTable,
   invitation as invitationTable,
   user as userTable,
-  organization as organizationTable,
 } from '@/lib/db/schemas/auth.schema'
 import { requireAuth } from '@/lib/auth/middleware'
 import { errorHandler, ForbiddenError, NotFoundError, ValidationError } from '@/lib/utils/error-handler'
@@ -190,6 +190,7 @@ export async function inviteUserAction(
       const [newInvitation] = await db
         .insert(invitationTable)
         .values({
+          id: randomUUID(),
           organizationId,
           email,
           role,

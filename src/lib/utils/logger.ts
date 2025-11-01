@@ -14,10 +14,30 @@ class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development'
   private isServer = typeof window === 'undefined'
 
+  /**
+   * Safe JSON.stringify that handles circular references
+   */
+  private safeStringify(obj: unknown): string {
+    const seen = new WeakSet()
+    return JSON.stringify(
+      obj,
+      (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular Reference]'
+          }
+          seen.add(value)
+        }
+        return value
+      },
+      2
+    )
+  }
+
   private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
     const timestamp = new Date().toISOString()
     const env = this.isServer ? '[Server]' : '[Client]'
-    const contextStr = context ? `\n${JSON.stringify(context, null, 2)}` : ''
+    const contextStr = context ? `\n${this.safeStringify(context)}` : ''
     return `${timestamp} ${env} [${level.toUpperCase()}] ${message}${contextStr}`
   }
 

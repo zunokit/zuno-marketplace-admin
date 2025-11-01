@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 
 // Mock environment variables for tests
-process.env.NODE_ENV = 'test'
+Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true })
 process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 
 // Silence console outputs during tests (unless debugging)

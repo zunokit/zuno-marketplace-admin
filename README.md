@@ -46,7 +46,7 @@ Update `.env.local` with your credentials. Get your Supabase credentials from [S
 pnpm db:push
 
 # Apply RLS policies (run in Supabase SQL Editor or psql)
-psql $AUTH_DATABASE_URL < src/lib/db/rls-policies.sql
+psql $DATABASE_URL < src/lib/db/rls-policies.sql
 ```
 
 ### 4. Run Development Server
@@ -96,10 +96,12 @@ Each project is:
 ### RBAC System
 
 **Global Roles:**
+
 - `super_admin`: Full system access, can create projects
 - `user`: Regular user with project-specific access
 
 **Project Roles:**
+
 - `owner`: Full project access
 - `admin`: Manage members and settings
 - `editor`: Create, read, update, delete data
@@ -123,18 +125,18 @@ In `config/projects.config.ts`:
 export const PROJECTS_REGISTRY = {
   // ... existing projects
   newProject: {
-    id: 'newProject',
-    name: '@zuno-marketplace-new',
-    slug: 'zuno-new',
+    id: "newProject",
+    name: "@zuno-marketplace-new",
+    slug: "zuno-new",
     databaseUrl: process.env.NEW_PROJECT_DATABASE_URL,
-    description: 'Description of the new project',
+    description: "Description of the new project",
     metadata: {
-      icon: '🆕',
-      color: '#10b981',
-      features: ['Feature 1', 'Feature 2'],
+      icon: "🆕",
+      color: "#10b981",
+      features: ["Feature 1", "Feature 2"],
     },
   },
-}
+};
 ```
 
 ### 3. Restart Dev Server
@@ -164,6 +166,7 @@ pnpm typecheck        # TypeScript type checking
 ## Deployment to Vercel
 
 1. **Push to GitHub**:
+
    ```bash
    git add .
    git commit -m "feat: Initial setup"
@@ -171,6 +174,7 @@ pnpm typecheck        # TypeScript type checking
    ```
 
 2. **Import to Vercel**:
+
    - Go to [vercel.com](https://vercel.com)
    - Import your repository
    - Configure environment variables (copy from `.env.local`)
@@ -196,7 +200,7 @@ pnpm typecheck        # TypeScript type checking
 
 ### Database Connection Issues
 
-1. Verify `AUTH_DATABASE_URL` is correct
+1. Verify `DATABASE_URL` is correct
 2. Check Supabase connection pooler is enabled
 3. Ensure RLS is enabled: Run `src/lib/db/rls-policies.sql`
 

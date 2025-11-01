@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "mcp__better-auth__search"
+      "mcp__better-auth__search",
+      "WebFetch(domain:www.better-auth.com)"
     ],
     "deny": [],
     "ask": []

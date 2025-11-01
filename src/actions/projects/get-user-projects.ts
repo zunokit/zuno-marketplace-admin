@@ -53,7 +53,7 @@ export async function getUserProjectsAction(): Promise<ServerActionResponse> {
 
     return serverActionSuccess(projects)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

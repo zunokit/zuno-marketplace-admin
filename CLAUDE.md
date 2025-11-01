@@ -164,6 +164,157 @@ When building features, consider:
 - Research and apply industry best practices without asking for permission
 - Only ask questions when absolutely necessary information is missing that would significantly impact the solution quality
 
+### ⚠️ CRITICAL: Automatic Workflow Completion
+
+**MANDATORY - Never skip these steps:**
+
+1. **Complete ALL Related Functionality Before Reporting:**
+
+   - NEVER stop after completing just one small piece - continue until ALL related features are fully implemented
+   - When implementing a feature, implement ALL related components, tests, validations, and integrations
+   - Don't report "done" until the ENTIRE feature set is complete and working
+   - Think ahead: what else is needed for this feature to be production-ready?
+
+2. **ALWAYS Run Type Check Before Reporting Completion:**
+
+   - MANDATORY: Run `pnpm typecheck` before reporting any task as complete
+   - If type errors exist, fix them immediately - don't report completion with type errors
+   - Type checking must pass with zero errors before moving on
+
+3. **ALWAYS Run Lint Before Reporting Completion:**
+
+   - MANDATORY: Run `pnpm lint` before reporting any task as complete
+   - Fix all linting errors automatically
+   - Code must be lint-free before completion
+
+4. **ALWAYS Commit Automatically When Complete:**
+
+   - After completing a feature (passing type check + lint), automatically commit the changes
+   - Use conventional commit format (see Git & Version Control section)
+   - Commit message must describe the complete feature, not just partial work
+   - Don't leave uncommitted changes after completing a task
+
+5. **No Partial Completion Reports:**
+   - NEVER say "done" or "ok" after completing just one small part
+   - Only report completion when the ENTIRE feature is implemented and verified
+   - Continue working autonomously until everything related is complete
+
+### 🚀 Autonomous Feature Development
+
+**When user provides an initial idea or feature request:**
+
+1. **Automatic Feature Breakdown:**
+
+   - Immediately analyze the complete feature scope
+   - Break down into ALL necessary components, functions, and integrations
+   - Identify dependencies, validations, error handling, and edge cases
+   - Plan the complete implementation path WITHOUT asking for confirmation
+
+2. **Complete Autonomous Implementation:**
+
+   - Implement ALL parts of the feature automatically
+   - Create all necessary files, components, types, validations
+   - Add error handling, loading states, and edge cases
+   - Integrate with existing systems (database, auth, APIs, etc.)
+   - Follow all project patterns and best practices
+   - **NEVER stop mid-way to ask "what's next?" or suggest next steps**
+
+3. **No Stopping Points:**
+
+   - ❌ NEVER stop to ask: "What should I do next?"
+   - ❌ NEVER stop to suggest: "You might want to add X"
+   - ❌ NEVER stop to ask: "Should I also implement Y?"
+   - ✅ DO: Complete the ENTIRE feature autonomously
+   - ✅ DO: Think ahead and implement related functionality
+   - ✅ DO: Only report when the complete feature is production-ready
+
+4. **Think Like a Product Owner:**
+
+   - What makes this feature production-ready?
+   - What validations are needed?
+   - What error states need handling?
+   - What loading states are needed?
+   - What edge cases exist?
+   - What integrations are required?
+   - Implement ALL of these automatically
+
+5. **Only Report When Complete:**
+   - Report completion ONLY when:
+     - All functionality is implemented
+     - All validations are in place
+     - All error handling is done
+     - All edge cases are covered
+     - Type check passes
+     - Lint passes
+     - Code is committed
+     - Feature is production-ready
+
+**Example Flow:**
+
+```
+User: "I want a user management page"
+
+AI Should:
+1. Analyze: What does user management need?
+   - List users with table
+   - Search/filter functionality
+   - Pagination
+   - Create user form
+   - Edit user form
+   - Delete user action
+   - Permissions handling
+   - Loading states
+   - Error handling
+
+2. Implement ALL of these automatically:
+   - Create route/page component
+   - Create user table with TanStack Table
+   - Create search/filter UI
+   - Create pagination component
+   - Create user form with validation
+   - Create Server Actions for CRUD
+   - Add error boundaries
+   - Add loading states
+   - Handle permissions
+   - Run typecheck
+   - Run lint
+   - Commit
+
+3. Report: "User management feature complete with all CRUD operations, search, pagination, and permissions"
+
+NOT: "I've created a basic user table. What would you like to add next?"
+```
+
+**Workflow Example:**
+
+```
+1. Implement feature A
+2. Implement all related components for feature A
+3. Add validations and error handling
+4. Run `pnpm typecheck` → Fix any errors
+5. Run `pnpm lint` → Fix any issues
+6. Commit with proper message
+7. Report completion (only then!)
+```
+
+**❌ WRONG:**
+
+```
+1. Implement one small function
+2. Report "ok, done" ← NEVER DO THIS
+3. Wait for user to ask for next part
+```
+
+**✅ CORRECT:**
+
+```
+1. Implement feature completely (all parts)
+2. Run typecheck → fix errors
+3. Run lint → fix issues
+4. Commit automatically
+5. Report: "Feature X is complete with all related functionality"
+```
+
 ### Code Architecture & Structure
 
 - Define directory structure and code rules upfront - be smart and standard from the start
@@ -262,13 +413,20 @@ logger.info('message')
 - Header: `<type>(<scope>): <description>` (≤50 chars)
 - Body: each line ≤100 chars, explain WHAT and WHY
 
-**Pre-commit Checklist:**
+**Pre-commit Checklist (MANDATORY):**
 
 - Always review code before committing
-- Run lint before committing: `pnpm lint`
-- Type check must pass: `pnpm typecheck`
+- **MANDATORY**: Run `pnpm lint` and fix all errors
+- **MANDATORY**: Run `pnpm typecheck` and fix all errors
 - No `console.log` (use logger)
 - Tests must pass (if applicable)
+- **AUTOMATIC COMMIT**: After completing a feature, automatically commit (don't wait for user approval)
+
+**Post-Commit Verification:**
+
+- After committing, verify the commit was successful
+- Ensure commit message follows conventional commits format
+- All changes related to the feature must be included in the commit
 
 ### File Management
 

@@ -33,7 +33,7 @@ export async function getTablesAction(
 
     return serverActionSuccess(tables)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -53,7 +53,7 @@ export async function getTableSchemaAction(
 
     return serverActionSuccess(schema)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -81,7 +81,7 @@ export async function getTableDataAction(
 
     return serverActionSuccess(data)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -108,10 +108,11 @@ export async function createRecordAction(
 
       // Build INSERT query
       const columns = Object.keys(data)
-      const values = Object.values(data)
-      const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ')
+      const values = Object.values(data).map((v) =>
+        typeof v === 'string' ? `'${v}'` : v === null ? 'NULL' : v
+      )
 
-      const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders}) RETURNING *`
+      const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values.join(', ')}) RETURNING *`
 
       const result = await db.execute<Record<string, unknown>>(sql.raw(query))
 
@@ -124,7 +125,7 @@ export async function createRecordAction(
 
     return serverActionSuccess(result, 'Record created successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -152,11 +153,16 @@ export async function updateRecordAction(
       }
 
       // Build UPDATE query
-      const columns = Object.keys(data)
-      const values = Object.values(data)
-      const setClause = columns.map((col, i) => `${col} = $${i + 1}`).join(', ')
+      const setClause = Object.entries(data)
+        .map(([col, val]) => {
+          const value = typeof val === 'string' ? `'${val}'` : val === null ? 'NULL' : val
+          return `${col} = ${value}`
+        })
+        .join(', ')
 
-      const query = `UPDATE ${tableName} SET ${setClause} WHERE ${primaryKeyColumn} = $${columns.length + 1} RETURNING *`
+      const pkValue = typeof primaryKeyValue === 'string' ? `'${primaryKeyValue}'` : primaryKeyValue
+
+      const query = `UPDATE ${tableName} SET ${setClause} WHERE ${primaryKeyColumn} = ${pkValue} RETURNING *`
 
       const result = await db.execute<Record<string, unknown>>(sql.raw(query))
 
@@ -177,7 +183,7 @@ export async function updateRecordAction(
 
     return serverActionSuccess(result, 'Record updated successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -217,7 +223,7 @@ export async function deleteRecordAction(
 
     return serverActionSuccess({ deleted: true }, 'Record deleted successfully')
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -260,7 +266,7 @@ export async function bulkDeleteRecordsAction(
 
     return serverActionSuccess({ deleted: deletedCount }, `${deletedCount} records deleted successfully`)
   } catch (error) {
-    // @ts-ignore - TODO: Fix ServerActionResponse generic type inference
+    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

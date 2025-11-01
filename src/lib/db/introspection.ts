@@ -1,6 +1,6 @@
 /**
- * Database Introspection System
- * Auto-discovers tables and schemas from project databases
+ * Database introspection utilities
+ * Provides functions to query database structure and data
  */
 
 import { sql } from 'drizzle-orm'
@@ -8,33 +8,26 @@ import { getProjectDb } from './connections'
 import { errorHandler } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
 
-export interface TableInfo {
-  name: string
-  schema: string
+interface TableInfo {
+  tableName: string
+  schemaName: string
   rowCount: number
 }
 
-export interface ColumnInfo {
-  name: string
-  type: string
-  nullable: boolean
+interface ColumnInfo {
+  columnName: string
+  dataType: string
+  isNullable: boolean
   defaultValue: string | null
   isPrimaryKey: boolean
-  isForeignKey: boolean
-  foreignKeyTable: string | null
-  foreignKeyColumn: string | null
 }
 
-export interface TableSchema {
-  tableName: string
-  schema: string
-  columns: ColumnInfo[]
-  primaryKeys: string[]
-  foreignKeys: Array<{
-    column: string
-    referencedTable: string
-    referencedColumn: string
-  }>
+interface TableData {
+  rows: Record<string, unknown>[]
+  totalCount: number
+  page: number
+  limit: number
+  totalPages: number
 }
 
 /**
@@ -44,190 +37,157 @@ export async function getProjectTables(projectId: string): Promise<TableInfo[]> 
   return errorHandler(async () => {
     const db = await getProjectDb(projectId)
 
-    const result = await db.execute<{
-      table_name: string
-      table_schema: string
-      row_count: number
-    }>(sql`
+    const result = await db.execute<{ table_name: string; schema_name: string }>(sql`
       SELECT
-        t.table_name,
-        t.table_schema,
-        COALESCE(s.n_live_tup, 0) as row_count
-      FROM information_schema.tables t
-      LEFT JOIN pg_stat_user_tables s ON t.table_name = s.relname
-      WHERE t.table_schema = 'public'
-        AND t.table_type = 'BASE TABLE'
-      ORDER BY t.table_name
+        table_name,
+        table_schema as schema_name
+      FROM information_schema.tables
+      WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+      AND table_type = 'BASE TABLE'
+      ORDER BY table_schema, table_name
     `)
 
-    logger.info(`Discovered ${result.length} tables in project: ${projectId}`)
+    // Get row counts for each table
+    const tablesWithCounts = await Promise.all(
+      result.map(async (table) => {
+        try {
+          const countResult = await db.execute<{ count: number }>(
+            sql.raw(`SELECT COUNT(*) as count FROM "${table.schema_name}"."${table.table_name}"`)
+          )
+          return {
+            tableName: table.table_name,
+            schemaName: table.schema_name,
+            rowCount: Number(countResult[0]?.count || 0),
+          }
+        } catch {
+          // If count fails, return 0
+          return {
+            tableName: table.table_name,
+            schemaName: table.schema_name,
+            rowCount: 0,
+          }
+        }
+      })
+    )
 
-    return result.map((row: { table_name: string; table_schema: string; row_count: number }) => ({
-      name: row.table_name,
-      schema: row.table_schema,
-      rowCount: Number(row.row_count) || 0,
-    }))
+    logger.debug('Retrieved project tables', { projectId, count: tablesWithCounts.length })
+
+    return tablesWithCounts
   }, 'getProjectTables')
 }
 
 /**
- * Get table schema with column information
+ * Get schema information for a specific table
  */
-export async function getTableSchema(
-  projectId: string,
-  tableName: string
-): Promise<TableSchema> {
+export async function getTableSchema(projectId: string, tableName: string): Promise<ColumnInfo[]> {
   return errorHandler(async () => {
     const db = await getProjectDb(projectId)
 
-    // Get column information
-    const columns = await db.execute<{
+    const result = await db.execute<{
       column_name: string
       data_type: string
       is_nullable: string
       column_default: string | null
+      is_primary: boolean
     }>(sql`
       SELECT
-        column_name,
-        data_type,
-        is_nullable,
-        column_default
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = ${tableName}
-      ORDER BY ordinal_position
+        c.column_name,
+        c.data_type,
+        c.is_nullable,
+        c.column_default,
+        CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END as is_primary
+      FROM information_schema.columns c
+      LEFT JOIN (
+        SELECT ku.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage ku
+          ON tc.constraint_name = ku.constraint_name
+          AND tc.table_schema = ku.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND ku.table_name = ${tableName}
+      ) pk ON c.column_name = pk.column_name
+      WHERE c.table_name = ${tableName}
+      ORDER BY c.ordinal_position
     `)
 
-    // Get primary keys
-    const primaryKeys = await db.execute<{
-      column_name: string
-    }>(sql`
-      SELECT a.attname as column_name
-      FROM pg_index i
-      JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-      WHERE i.indrelid = ${tableName}::regclass
-        AND i.indisprimary
-    `)
+    const schema = result.map((col) => ({
+      columnName: col.column_name,
+      dataType: col.data_type,
+      isNullable: col.is_nullable === 'YES',
+      defaultValue: col.column_default,
+      isPrimaryKey: col.is_primary,
+    }))
 
-    // Get foreign keys
-    const foreignKeys = await db.execute<{
-      column_name: string
-      foreign_table_name: string
-      foreign_column_name: string
-    }>(sql`
-      SELECT
-        kcu.column_name,
-        ccu.table_name AS foreign_table_name,
-        ccu.column_name AS foreign_column_name
-      FROM information_schema.table_constraints AS tc
-      JOIN information_schema.key_column_usage AS kcu
-        ON tc.constraint_name = kcu.constraint_name
-        AND tc.table_schema = kcu.table_schema
-      JOIN information_schema.constraint_column_usage AS ccu
-        ON ccu.constraint_name = tc.constraint_name
-        AND ccu.table_schema = tc.table_schema
-      WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_name = ${tableName}
-    `)
+    logger.debug('Retrieved table schema', { projectId, tableName, columnCount: schema.length })
 
-    const pkSet = new Set(primaryKeys.map((pk: { column_name: string }) => pk.column_name))
-    const fkMap = new Map(
-      foreignKeys.map((fk: { column_name: string; foreign_table_name: string; foreign_column_name: string }) => [
-        fk.column_name,
-        { table: fk.foreign_table_name, column: fk.foreign_column_name },
-      ])
-    )
-
-    const columnInfos: ColumnInfo[] = columns.map((col: { column_name: string; data_type: string; is_nullable: string; column_default: string | null }) => {
-      const fk = fkMap.get(col.column_name)
-      return {
-        name: col.column_name,
-        type: col.data_type,
-        nullable: col.is_nullable === 'YES',
-        defaultValue: col.column_default,
-        isPrimaryKey: pkSet.has(col.column_name),
-        isForeignKey: !!fk,
-        foreignKeyTable: fk ? fk.table : null,
-        foreignKeyColumn: fk ? fk.column : null,
-      }
-    })
-
-    logger.debug(`Retrieved schema for table: ${tableName}`, {
-      columnsCount: columnInfos.length,
-      primaryKeysCount: primaryKeys.length,
-      foreignKeysCount: foreignKeys.length,
-    })
-
-    return {
-      tableName,
-      schema: 'public',
-      columns: columnInfos,
-      primaryKeys: primaryKeys.map((pk: { column_name: string }) => pk.column_name),
-      foreignKeys: foreignKeys.map((fk: { column_name: string; foreign_table_name: string; foreign_column_name: string }) => ({
-        column: fk.column_name,
-        referencedTable: fk.foreign_table_name,
-        referencedColumn: fk.foreign_column_name,
-      })),
-    }
+    return schema
   }, 'getTableSchema')
 }
 
 /**
- * Get data from a table with pagination
+ * Get data from a table with pagination and search
  */
-export async function getTableData<T extends Record<string, unknown> = Record<string, unknown>>(
+export async function getTableData(
   projectId: string,
   tableName: string,
-  options: {
+  options?: {
     page?: number
     limit?: number
     orderBy?: string
     orderDirection?: 'asc' | 'desc'
     search?: string
     searchColumns?: string[]
-  } = {}
-): Promise<{ data: T[]; total: number; page: number; limit: number }> {
+  }
+): Promise<TableData> {
   return errorHandler(async () => {
     const db = await getProjectDb(projectId)
-    const page = options.page || 1
-    const limit = options.limit || 50
+
+    const page = options?.page || 1
+    const limit = options?.limit || 50
     const offset = (page - 1) * limit
+    const orderBy = options?.orderBy || 'id'
+    const orderDirection = options?.orderDirection || 'desc'
 
     // Build WHERE clause for search
     let whereClause = ''
-    if (options.search && options.searchColumns && options.searchColumns.length > 0) {
-      const searchConditions = options.searchColumns
-        .map((col) => `${col}::text ILIKE '%${options.search}%'`)
-        .join(' OR ')
-      whereClause = `WHERE ${searchConditions}`
+    if (options?.search && options?.searchColumns && options.searchColumns.length > 0) {
+      const searchConditions = options.searchColumns.map((col) => {
+        return `CAST("${col}" AS TEXT) ILIKE '%${options.search}%'`
+      })
+      whereClause = `WHERE ${searchConditions.join(' OR ')}`
     }
 
-    // Build ORDER BY clause
-    const orderClause = options.orderBy
-      ? `ORDER BY ${options.orderBy} ${options.orderDirection || 'asc'}`
-      : ''
-
     // Get total count
-    const countQuery = `SELECT COUNT(*) as count FROM ${tableName} ${whereClause}`
+    const countQuery = `SELECT COUNT(*) as count FROM "${tableName}" ${whereClause}`
     const countResult = await db.execute<{ count: string }>(sql.raw(countQuery))
-    const total = Number(countResult[0]?.count || 0)
+    const totalCount = Number(countResult[0]?.count || 0)
 
     // Get data
-    const dataQuery = `SELECT * FROM ${tableName} ${whereClause} ${orderClause} LIMIT ${limit} OFFSET ${offset}`
-    const data = await db.execute<T>(sql.raw(dataQuery))
+    const dataQuery = `
+      SELECT * FROM "${tableName}"
+      ${whereClause}
+      ORDER BY "${orderBy}" ${orderDirection}
+      LIMIT ${limit} OFFSET ${offset}
+    `
+    const rows = await db.execute<Record<string, unknown>>(sql.raw(dataQuery))
 
-    logger.debug(`Retrieved table data: ${tableName}`, {
+    const totalPages = Math.ceil(totalCount / limit)
+
+    logger.debug('Retrieved table data', {
+      projectId,
+      tableName,
       page,
       limit,
-      total,
-      returned: data.length,
+      totalCount,
+      rowCount: rows.length,
     })
 
     return {
-      data: data as T[],
-      total,
+      rows,
+      totalCount,
       page,
       limit,
+      totalPages,
     }
   }, 'getTableData')
 }
