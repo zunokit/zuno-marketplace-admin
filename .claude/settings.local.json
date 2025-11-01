@@ -1,17 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__better-auth__search",
-      "WebFetch(domain:www.better-auth.com)",
-      "Bash(pkill:*)",
-      "Bash(npx shadcn@latest add:*)",
-      "Bash(pnpm typecheck:*)",
-      "Bash(pnpm list:*)",
-      "Bash(pnpm add:*)",
-      "Bash(pnpm lint:*)",
-      "Bash(pnpm eslint:*)",
-      "Bash(pnpm exec eslint:*)",
-      "Bash(git add:*)"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
