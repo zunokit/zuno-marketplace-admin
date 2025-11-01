@@ -5,7 +5,7 @@
  * Browse and manage data from all tables in the active project
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
 import {
   getTablesAction,
@@ -28,12 +28,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Database, Table as TableIcon, RefreshCw } from 'lucide-react'
+import { Database, Table as TableIcon, RefreshCw, Plus, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DataTable } from '@/components/data/data-table'
 import { ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/components/data/data-table-column-header'
+import { DataTableRowActions, type RowAction } from '@/components/data/data-table-row-actions'
 import { Skeleton } from '@/components/ui/skeleton'
+import { CreateRecordDialog } from '@/components/data/create-record-dialog'
+import { EditRecordDialog } from '@/components/data/edit-record-dialog'
+import { DeleteRecordDialog } from '@/components/data/delete-record-dialog'
+import { type FieldSchema } from '@/components/data/dynamic-form'
 
 type TableInfo = {
   name: string
@@ -46,9 +51,21 @@ export default function DataBrowserPage() {
   const [tables, setTables] = useState<TableInfo[]>([])
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
   const [tableData, setTableData] = useState<Record<string, unknown>[]>([])
+  const [tableSchema, setTableSchema] = useState<FieldSchema[]>([])
   const [columns, setColumns] = useState<ColumnDef<Record<string, unknown>>[]>([])
   const [isLoadingTables, setIsLoadingTables] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(false)
+
+  // Dialog states
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedRecord, setSelectedRecord] = useState<Record<string, unknown> | null>(null)
+
+  // Get primary key from schema
+  const primaryKey = useMemo(() => {
+    return tableSchema.find((col) => col.isPrimaryKey)?.name || 'id'
+  }, [tableSchema])
 
   useEffect(() => {
     if (activeProject) {
@@ -100,14 +117,15 @@ export default function DataBrowserPage() {
     if (dataResult.success && dataResult.data && schemaResult.success && schemaResult.data) {
       const tableDataResponse = dataResult.data as { data: Record<string, unknown>[] }
       const schemaData = schemaResult.data as {
-        columns: Array<{ name: string; type: string }>
+        columns: FieldSchema[]
       }
 
       setTableData(tableDataResponse.data)
+      setTableSchema(schemaData.columns)
 
-      // Generate columns from schema
-      const generatedColumns: ColumnDef<Record<string, unknown>>[] = schemaData.columns.map(
-        (col) => ({
+      // Generate columns from schema with actions
+      const generatedColumns: ColumnDef<Record<string, unknown>>[] = [
+        ...schemaData.columns.map((col): ColumnDef<Record<string, unknown>> => ({
           accessorKey: col.name,
           header: ({ column }) => (
             <DataTableColumnHeader column={column} title={col.name} />
@@ -129,8 +147,28 @@ export default function DataBrowserPage() {
             }
             return <div className="max-w-[500px] truncate">{String(value)}</div>
           },
-        })
-      )
+        })),
+        {
+          id: 'actions',
+          cell: ({ row }) => {
+            const actions: RowAction<Record<string, unknown>>[] = [
+              {
+                label: 'Edit',
+                icon: <Edit className="h-4 w-4" />,
+                onClick: () => handleEdit(row.original),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 className="h-4 w-4" />,
+                onClick: () => handleDelete(row.original),
+                variant: 'destructive',
+                separator: true,
+              },
+            ]
+            return <DataTableRowActions row={row} actions={actions} />
+          },
+        },
+      ]
 
       setColumns(generatedColumns)
     } else {
@@ -146,6 +184,26 @@ export default function DataBrowserPage() {
   }
 
   function handleRefresh() {
+    if (selectedTable) {
+      loadTableData(selectedTable)
+    }
+  }
+
+  function handleCreate() {
+    setCreateDialogOpen(true)
+  }
+
+  function handleEdit(record: Record<string, unknown>) {
+    setSelectedRecord(record)
+    setEditDialogOpen(true)
+  }
+
+  function handleDelete(record: Record<string, unknown>) {
+    setSelectedRecord(record)
+    setDeleteDialogOpen(true)
+  }
+
+  function handleDialogSuccess() {
     if (selectedTable) {
       loadTableData(selectedTable)
     }
@@ -242,14 +300,24 @@ export default function DataBrowserPage() {
                 </CardDescription>
               </div>
               {selectedTable && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isLoadingData}
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingData ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isLoadingData}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleCreate}
+                    disabled={isLoadingData}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Record
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -273,6 +341,45 @@ export default function DataBrowserPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* CRUD Dialogs */}
+      {activeProject && selectedTable && (
+        <>
+          <CreateRecordDialog
+            projectId={activeProject.id}
+            tableName={selectedTable}
+            schema={tableSchema}
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+            onSuccess={handleDialogSuccess}
+          />
+
+          {selectedRecord && (
+            <>
+              <EditRecordDialog
+                projectId={activeProject.id}
+                tableName={selectedTable}
+                schema={tableSchema}
+                record={selectedRecord}
+                primaryKey={primaryKey}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                onSuccess={handleDialogSuccess}
+              />
+
+              <DeleteRecordDialog
+                projectId={activeProject.id}
+                tableName={selectedTable}
+                primaryKey={primaryKey}
+                primaryKeyValue={selectedRecord[primaryKey] as string | number}
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onSuccess={handleDialogSuccess}
+              />
+            </>
+          )}
+        </>
+      )}
     </div>
   )
 }
