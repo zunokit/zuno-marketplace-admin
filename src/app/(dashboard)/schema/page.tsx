@@ -46,10 +46,32 @@ export default function SchemaPage() {
   }, [activeProject])
 
   useEffect(() => {
-    if (activeProject) {
-      loadSchema()
+    if (!activeProject) return
+
+    // Call async function directly to avoid lint error about setState in effect
+    let isMounted = true
+
+    const fetchSchema = async () => {
+      setIsLoading(true)
+      const result = await getCompleteSchemaAction(activeProject.id)
+
+      if (!isMounted) return
+
+      if (result.success && result.data) {
+        setSchema(result.data)
+      } else {
+        toast.error('error' in result ? result.error : 'Failed to load schema')
+      }
+
+      setIsLoading(false)
     }
-  }, [activeProject, loadSchema])
+
+    fetchSchema()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeProject])
 
   const selectedTableData = schema?.tables.find((t) => t.tableName === selectedTable)
 

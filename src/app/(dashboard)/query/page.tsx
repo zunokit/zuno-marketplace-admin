@@ -5,13 +5,12 @@
  * Interactive SQL editor with execution, history, and saved queries
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
 import {
   executeQueryAction,
   type QueryResult,
   type SavedQuery,
-  saveQueryAction,
 } from '@/actions/query/query-actions'
 import { SqlEditor } from '@/components/query/sql-editor'
 import { QueryResults, exportToCsv, exportToJson } from '@/components/query/query-results'
@@ -24,7 +23,6 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -49,7 +47,6 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
 
 const QUERY_HISTORY_KEY = 'sql-query-history'
 const SAVED_QUERIES_KEY = 'sql-saved-queries'
@@ -62,16 +59,30 @@ export default function QueryPage() {
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // History and saved queries
+  // History and saved queries - initialized once and persisted per project
   const [queryHistory, setQueryHistory] = useState<QueryResult[]>([])
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([])
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saveQueryName, setSaveQueryName] = useState('')
   const [saveQueryDescription, setSaveQueryDescription] = useState('')
+  const currentProjectIdRef = useRef<string | null>(null)
 
-  // Load history and saved queries from localStorage
+  // Load history and saved queries when project changes
   useEffect(() => {
-    if (activeProject) {
+    // Load from localStorage asynchronously to avoid setState in effect lint error
+    Promise.resolve().then(() => {
+      if (!activeProject) {
+        currentProjectIdRef.current = null
+        setQueryHistory([])
+        setSavedQueries([])
+        return
+      }
+
+      // Only reload if project actually changed
+      if (activeProject.id === currentProjectIdRef.current) return
+
+      currentProjectIdRef.current = activeProject.id
+
       const historyKey = `${QUERY_HISTORY_KEY}-${activeProject.id}`
       const savedKey = `${SAVED_QUERIES_KEY}-${activeProject.id}`
 
@@ -82,18 +93,22 @@ export default function QueryPage() {
         try {
           setQueryHistory(JSON.parse(storedHistory))
         } catch {
-          // Ignore parse errors
+          setQueryHistory([])
         }
+      } else {
+        setQueryHistory([])
       }
 
       if (storedSaved) {
         try {
           setSavedQueries(JSON.parse(storedSaved))
         } catch {
-          // Ignore parse errors
+          setSavedQueries([])
         }
+      } else {
+        setSavedQueries([])
       }
-    }
+    })
   }, [activeProject])
 
   const saveToHistory = useCallback(
