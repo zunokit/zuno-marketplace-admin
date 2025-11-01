@@ -92,7 +92,7 @@ export function ForeignKeySelect({
         } else {
           setError(result.error)
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load options')
       } finally {
         setIsLoading(false)
