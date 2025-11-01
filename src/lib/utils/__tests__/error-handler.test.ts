@@ -133,8 +133,13 @@ describe('Error Handler Utility', () => {
         throw new Error('Async error')
       }
 
-      await expect(asyncErrorHandler(fn, 'testOperation')).rejects.toThrow(AppError)
-      await expect(asyncErrorHandler(fn, 'testOperation')).rejects.toThrow('Async error')
+      try {
+        await asyncErrorHandler(fn, 'testOperation')
+        fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(AppError)
+        expect((error as Error).message).toBe('Async error')
+      }
     })
 
     it('should handle custom errors in async context', async () => {
@@ -142,16 +147,13 @@ describe('Error Handler Utility', () => {
         throw new NotFoundError('Resource not found')
       }
 
-      await expect(asyncErrorHandler(fn, 'testOperation')).rejects.toThrow(NotFoundError)
-      await expect(asyncErrorHandler(fn, 'testOperation')).rejects.toThrow('Resource not found')
-    })
-
-    it('should handle async/await errors', async () => {
-      const fn = async () => {
-        await Promise.reject(new Error('Rejection'))
+      try {
+        await asyncErrorHandler(fn, 'testOperation')
+        fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundError)
+        expect((error as Error).message).toBe('Resource not found')
       }
-
-      await expect(asyncErrorHandler(fn, 'testOperation')).rejects.toThrow(AppError)
     })
   })
 

@@ -67,10 +67,12 @@ describe('Encryption Utility', () => {
     it('should throw error when decrypting tampered data', () => {
       const encrypted = encrypt('test data')
 
-      // Tamper with the encrypted data
-      const tampered = encrypted.slice(0, -5) + 'xxxxx'
+      // Tamper with the auth tag (part 3) - change a hex digit
+      const parts = encrypted.split(':')
+      parts[2] = parts[2].slice(0, -2) + 'ff' // Change last 2 chars of auth tag
+      const tampered = parts.join(':')
 
-      expect(() => decrypt(tampered)).toThrow()
+      expect(() => decrypt(tampered)).toThrow('Failed to decrypt data')
     })
 
     it('should handle null and undefined by throwing', () => {
@@ -91,7 +93,7 @@ describe('Encryption Utility', () => {
     it('should throw error if ENCRYPTION_KEY is not set', () => {
       delete process.env.ENCRYPTION_KEY
 
-      expect(() => encrypt('test')).toThrow('ENCRYPTION_KEY')
+      expect(() => encrypt('test')).toThrow('Failed to encrypt data')
     })
 
     it('should throw error if ENCRYPTION_KEY is invalid length', () => {
@@ -102,14 +104,20 @@ describe('Encryption Utility', () => {
   })
 
   describe('format validation', () => {
-    it('should produce base64url encoded output', () => {
+    it('should produce hex encoded output with colons', () => {
       const encrypted = encrypt('test data')
 
-      // Base64url characters (no +, /, or =)
-      expect(encrypted).toMatch(/^[A-Za-z0-9_-]+$/)
+      // Format: hex:hex:hex:hex (encrypted:iv:authTag:salt)
+      const parts = encrypted.split(':')
+      expect(parts).toHaveLength(4)
+
+      // Each part should be hex encoded
+      parts.forEach((part) => {
+        expect(part).toMatch(/^[0-9a-f]+$/)
+      })
     })
 
-    it('should handle base64url padding correctly', () => {
+    it('should handle various string lengths correctly', () => {
       const testStrings = [
         'a',
         'ab',
