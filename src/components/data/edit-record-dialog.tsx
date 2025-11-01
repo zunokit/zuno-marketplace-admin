@@ -75,6 +75,7 @@ export function EditRecordDialog({
         </DialogHeader>
 
         <DynamicForm
+          projectId={projectId}
           schema={schema}
           defaultValues={record}
           onSubmit={handleSubmit}

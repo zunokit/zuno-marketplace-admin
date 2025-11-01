@@ -64,6 +64,7 @@ export function CreateRecordDialog({
         </DialogHeader>
 
         <DynamicForm
+          projectId={projectId}
           schema={schema}
           onSubmit={handleSubmit}
           onCancel={handleCancel}

@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
+import { ForeignKeySelect } from './foreign-key-select'
 
 export type FieldSchema = {
   name: string
@@ -44,6 +45,7 @@ export type FieldSchema = {
 }
 
 type DynamicFormProps = {
+  projectId: string
   schema: FieldSchema[]
   defaultValues?: Record<string, unknown>
   onSubmit: (data: Record<string, unknown>) => Promise<void>
@@ -149,8 +151,8 @@ function generateZodSchema(fields: FieldSchema[]): z.ZodObject<Record<string, z.
 /**
  * Render appropriate input field based on database type
  */
-function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<string, unknown>>>, mode: 'create' | 'edit') {
-  const { name, type, isPrimaryKey, nullable, enumValues } = field
+function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<string, unknown>>>, mode: 'create' | 'edit', projectId: string) {
+  const { name, type, isPrimaryKey, nullable, enumValues, isForeignKey, foreignKeyTable } = field
   const fieldType = type.toLowerCase()
 
   // Skip primary keys in create mode
@@ -170,8 +172,20 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
             {!nullable && !isPrimaryKey && <span className="text-destructive ml-1">*</span>}
           </FormLabel>
           <FormControl>
-            {/* Enum select */}
-            {enumValues && enumValues.length > 0 ? (
+            {/* Foreign key select */}
+            {isForeignKey && foreignKeyTable ? (
+              <ForeignKeySelect
+                projectId={projectId}
+                tableName={foreignKeyTable}
+                columnName={name}
+                value={formField.value as string | number | null}
+                onChange={formField.onChange}
+                nullable={nullable}
+                disabled={isPrimaryKey && mode === 'edit'}
+                placeholder={nullable ? 'Select (optional)' : 'Select value'}
+              />
+            ) : /* Enum select */
+            enumValues && enumValues.length > 0 ? (
               <Select
                 value={String(formField.value || '')}
                 onValueChange={formField.onChange}
@@ -273,6 +287,7 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
 }
 
 export function DynamicForm({
+  projectId,
   schema,
   defaultValues = {},
   onSubmit,
@@ -327,7 +342,7 @@ export function DynamicForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
-          {schema.map((field) => renderField(field, form, mode))}
+          {schema.map((field) => renderField(field, form, mode, projectId))}
         </div>
 
         <div className="flex items-center gap-4 pt-4 border-t">
