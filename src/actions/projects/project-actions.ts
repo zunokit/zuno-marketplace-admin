@@ -47,7 +47,6 @@ export async function getAllProjectsAction(): Promise<ServerActionResponse> {
 
     return serverActionSuccess(projects)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -85,7 +84,6 @@ export async function getProjectByIdAction(projectId: string): Promise<ServerAct
 
     return serverActionSuccess(project)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -153,7 +151,6 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Se
 
     return serverActionSuccess(project, 'Project created successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -234,7 +231,6 @@ export async function updateProjectAction(input: UpdateProjectInput): Promise<Se
 
     return serverActionSuccess(project, 'Project updated successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -278,7 +274,6 @@ export async function deleteProjectAction(projectId: string): Promise<ServerActi
 
     return serverActionSuccess({ deleted: true }, 'Project deleted successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -327,7 +322,6 @@ export async function testProjectConnectionAction(databaseUrl: string): Promise<
 
     return serverActionSuccess(result)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
