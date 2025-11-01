@@ -22,6 +22,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
 
 export type FieldSchema = {
@@ -33,6 +40,7 @@ export type FieldSchema = {
   isForeignKey: boolean
   foreignKeyTable: string | null
   foreignKeyColumn: string | null
+  enumValues: string[] | null
 }
 
 type DynamicFormProps = {
@@ -142,7 +150,7 @@ function generateZodSchema(fields: FieldSchema[]): z.ZodObject<Record<string, z.
  * Render appropriate input field based on database type
  */
 function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<string, unknown>>>, mode: 'create' | 'edit') {
-  const { name, type, isPrimaryKey, nullable } = field
+  const { name, type, isPrimaryKey, nullable, enumValues } = field
   const fieldType = type.toLowerCase()
 
   // Skip primary keys in create mode
@@ -162,7 +170,31 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
             {!nullable && !isPrimaryKey && <span className="text-destructive ml-1">*</span>}
           </FormLabel>
           <FormControl>
-            {fieldType === 'boolean' || fieldType === 'bool' ? (
+            {/* Enum select */}
+            {enumValues && enumValues.length > 0 ? (
+              <Select
+                value={String(formField.value || '')}
+                onValueChange={formField.onChange}
+                disabled={isPrimaryKey && mode === 'edit'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={nullable ? 'Select (optional)' : 'Select value'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {nullable && (
+                    <SelectItem value="">
+                      <span className="text-muted-foreground">None</span>
+                    </SelectItem>
+                  )}
+                  {enumValues.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : /* Boolean checkbox */
+            fieldType === 'boolean' || fieldType === 'bool' ? (
               <div className="flex items-center space-x-2">
                 <Checkbox
                   checked={formField.value as boolean}
@@ -173,7 +205,8 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
                   {formField.value ? 'True' : 'False'}
                 </span>
               </div>
-            ) : fieldType === 'text' ? (
+            ) : /* Textarea for text fields */
+            fieldType === 'text' ? (
               <Textarea
                 {...formField}
                 value={(formField.value as string) || ''}
@@ -181,7 +214,8 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
                 placeholder={nullable ? 'Optional' : 'Required'}
                 disabled={isPrimaryKey && mode === 'edit'}
               />
-            ) : fieldType === 'json' || fieldType === 'jsonb' ? (
+            ) : /* JSON textarea */
+            fieldType === 'json' || fieldType === 'jsonb' ? (
               <Textarea
                 {...formField}
                 value={
@@ -194,21 +228,24 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
                 className="font-mono text-xs"
                 disabled={isPrimaryKey && mode === 'edit'}
               />
-            ) : fieldType === 'date' ? (
+            ) : /* Date input */
+            fieldType === 'date' ? (
               <Input
                 type="date"
                 {...formField}
                 value={(formField.value as string) || ''}
                 disabled={isPrimaryKey && mode === 'edit'}
               />
-            ) : fieldType.includes('timestamp') ? (
+            ) : /* Timestamp input */
+            fieldType.includes('timestamp') ? (
               <Input
                 type="datetime-local"
                 {...formField}
                 value={(formField.value as string) || ''}
                 disabled={isPrimaryKey && mode === 'edit'}
               />
-            ) : (
+            ) : /* Default text/number input */
+            (
               <Input
                 type={
                   fieldType.includes('int') || fieldType.includes('numeric')
@@ -226,6 +263,7 @@ function renderField(field: FieldSchema, form: ReturnType<typeof useForm<Record<
             {type}
             {isPrimaryKey && ' (Primary Key)'}
             {field.isForeignKey && ` → ${field.foreignKeyTable}.${field.foreignKeyColumn}`}
+            {enumValues && enumValues.length > 0 && ` (Enum: ${enumValues.length} values)`}
           </FormDescription>
           <FormMessage />
         </FormItem>

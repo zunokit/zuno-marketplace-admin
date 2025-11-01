@@ -106,15 +106,39 @@ export async function createRecordAction(
         throw new ValidationError('No data provided')
       }
 
-      // Build INSERT query
+      // Validate table name (prevent SQL injection)
+      const validTableNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+      if (!validTableNameRegex.test(tableName)) {
+        throw new ValidationError('Invalid table name')
+      }
+
+      // Build INSERT query with proper parameterization
       const columns = Object.keys(data)
-      const values = Object.values(data).map((v) =>
-        typeof v === 'string' ? `'${v}'` : v === null ? 'NULL' : v
+
+      // Validate column names (prevent SQL injection)
+      for (const col of columns) {
+        if (!validTableNameRegex.test(col)) {
+          throw new ValidationError(`Invalid column name: ${col}`)
+        }
+      }
+
+      // Build INSERT query - unfortunately we need to use raw SQL for dynamic columns
+      // but we validate column names above to prevent SQL injection
+      const columnsList = columns.map((c) => `"${c}"`).join(', ')
+      const valuesList = columns.map((col) => {
+        const value = data[col]
+        if (value === null || value === undefined) return 'NULL'
+        if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'` // Escape single quotes
+        if (typeof value === 'boolean') return value ? 'true' : 'false'
+        if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`
+        return String(value)
+      }).join(', ')
+
+      const query = sql.raw(
+        `INSERT INTO "${tableName}" (${columnsList}) VALUES (${valuesList}) RETURNING *`
       )
 
-      const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values.join(', ')}) RETURNING *`
-
-      const result = await db.execute<Record<string, unknown>>(sql.raw(query))
+      const result = await db.execute<Record<string, unknown>>(query)
 
       logger.info(`Created record in ${tableName}`, { projectId, tableName, recordId: result[0] })
 
@@ -152,19 +176,56 @@ export async function updateRecordAction(
         throw new ValidationError('No data provided')
       }
 
-      // Build UPDATE query
-      const setClause = Object.entries(data)
-        .map(([col, val]) => {
-          const value = typeof val === 'string' ? `'${val}'` : val === null ? 'NULL' : val
-          return `${col} = ${value}`
-        })
-        .join(', ')
+      // Validate table/column names (prevent SQL injection)
+      const validNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+      if (!validNameRegex.test(tableName)) {
+        throw new ValidationError('Invalid table name')
+      }
+      if (!validNameRegex.test(primaryKeyColumn)) {
+        throw new ValidationError('Invalid primary key column name')
+      }
 
-      const pkValue = typeof primaryKeyValue === 'string' ? `'${primaryKeyValue}'` : primaryKeyValue
+      // Build UPDATE query with proper parameterization
+      const columns = Object.keys(data)
 
-      const query = `UPDATE ${tableName} SET ${setClause} WHERE ${primaryKeyColumn} = ${pkValue} RETURNING *`
+      // Validate column names (prevent SQL injection)
+      for (const col of columns) {
+        if (!validNameRegex.test(col)) {
+          throw new ValidationError(`Invalid column name: ${col}`)
+        }
+      }
 
-      const result = await db.execute<Record<string, unknown>>(sql.raw(query))
+      // Build SET clause with proper value escaping
+      const setClause = columns.map((col) => {
+        const value = data[col]
+        let escapedValue: string
+        if (value === null || value === undefined) {
+          escapedValue = 'NULL'
+        } else if (typeof value === 'string') {
+          escapedValue = `'${value.replace(/'/g, "''")}'`
+        } else if (typeof value === 'boolean') {
+          escapedValue = value ? 'true' : 'false'
+        } else if (typeof value === 'object') {
+          escapedValue = `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`
+        } else {
+          escapedValue = String(value)
+        }
+        return `"${col}" = ${escapedValue}`
+      }).join(', ')
+
+      // Build WHERE clause with escaped primary key value
+      let pkValueEscaped: string
+      if (typeof primaryKeyValue === 'string') {
+        pkValueEscaped = `'${primaryKeyValue.replace(/'/g, "''")}'`
+      } else {
+        pkValueEscaped = String(primaryKeyValue)
+      }
+
+      const query = sql.raw(
+        `UPDATE "${tableName}" SET ${setClause} WHERE "${primaryKeyColumn}" = ${pkValueEscaped} RETURNING *`
+      )
+
+      const result = await db.execute<Record<string, unknown>>(query)
 
       if (!result || result.length === 0) {
         throw new ValidationError('Record not found')
@@ -204,9 +265,28 @@ export async function deleteRecordAction(
     await errorHandler(async () => {
       const db = await getProjectDb(projectId)
 
-      const query = `DELETE FROM ${tableName} WHERE ${primaryKeyColumn} = $1 RETURNING *`
+      // Validate table/column names (prevent SQL injection)
+      const validNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+      if (!validNameRegex.test(tableName)) {
+        throw new ValidationError('Invalid table name')
+      }
+      if (!validNameRegex.test(primaryKeyColumn)) {
+        throw new ValidationError('Invalid primary key column name')
+      }
 
-      const result = await db.execute<Record<string, unknown>>(sql.raw(query))
+      // Escape primary key value
+      let pkValueEscaped: string
+      if (typeof primaryKeyValue === 'string') {
+        pkValueEscaped = `'${primaryKeyValue.replace(/'/g, "''")}'`
+      } else {
+        pkValueEscaped = String(primaryKeyValue)
+      }
+
+      const query = sql.raw(
+        `DELETE FROM "${tableName}" WHERE "${primaryKeyColumn}" = ${pkValueEscaped} RETURNING *`
+      )
+
+      const result = await db.execute<Record<string, unknown>>(query)
 
       if (!result || result.length === 0) {
         throw new ValidationError('Record not found')
@@ -248,10 +328,28 @@ export async function bulkDeleteRecordsAction(
         throw new ValidationError('No records specified')
       }
 
-      const placeholders = primaryKeyValues.map((_, i) => `$${i + 1}`).join(', ')
-      const query = `DELETE FROM ${tableName} WHERE ${primaryKeyColumn} IN (${placeholders}) RETURNING *`
+      // Validate table/column names (prevent SQL injection)
+      const validNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+      if (!validNameRegex.test(tableName)) {
+        throw new ValidationError('Invalid table name')
+      }
+      if (!validNameRegex.test(primaryKeyColumn)) {
+        throw new ValidationError('Invalid primary key column name')
+      }
 
-      const result = await db.execute<Record<string, unknown>>(sql.raw(query))
+      // Escape all primary key values
+      const escapedValues = primaryKeyValues.map((val) => {
+        if (typeof val === 'string') {
+          return `'${val.replace(/'/g, "''")}'`
+        }
+        return String(val)
+      }).join(', ')
+
+      const query = sql.raw(
+        `DELETE FROM "${tableName}" WHERE "${primaryKeyColumn}" IN (${escapedValues}) RETURNING *`
+      )
+
+      const result = await db.execute<Record<string, unknown>>(query)
 
       logger.warn(`Bulk deleted ${result.length} records from ${tableName}`, {
         projectId,

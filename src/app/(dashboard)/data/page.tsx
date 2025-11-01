@@ -20,13 +20,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Database, Table as TableIcon, RefreshCw, Plus, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -120,6 +113,10 @@ export default function DataBrowserPage() {
         isNullable: boolean
         defaultValue: string | null
         isPrimaryKey: boolean
+        isForeignKey: boolean
+        foreignKeyTable: string | null
+        foreignKeyColumn: string | null
+        enumValues: string[] | null
       }[]
 
       // Map ColumnInfo to FieldSchema
@@ -129,9 +126,10 @@ export default function DataBrowserPage() {
         nullable: col.isNullable,
         defaultValue: col.defaultValue,
         isPrimaryKey: col.isPrimaryKey,
-        isForeignKey: false, // TODO: Add foreign key detection
-        foreignKeyTable: null,
-        foreignKeyColumn: null,
+        isForeignKey: col.isForeignKey || false,
+        foreignKeyTable: col.foreignKeyTable || null,
+        foreignKeyColumn: col.foreignKeyColumn || null,
+        enumValues: col.enumValues || null,
       }))
 
       setTableData(tableDataResponse.rows)
@@ -195,7 +193,7 @@ export default function DataBrowserPage() {
     }
 
     setIsLoadingData(false)
-  }, [activeProject, primaryKey, handleEdit, handleDelete])
+  }, [activeProject, handleEdit, handleDelete])
 
   useEffect(() => {
     if (activeProject) {
