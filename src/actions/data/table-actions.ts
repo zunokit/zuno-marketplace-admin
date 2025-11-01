@@ -7,7 +7,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { sql } from 'drizzle-orm'
-import type { ProjectId } from '@/config/projects.config'
 import { getProjectDb } from '@/lib/db/connections'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
@@ -24,7 +23,7 @@ import {
  * Get all tables in a project
  */
 export async function getTablesAction(
-  projectId: ProjectId
+  projectId: string
 ): Promise<ServerActionResponse<Awaited<ReturnType<typeof getProjectTables>>>> {
   try {
     const session = await requireAuth()
@@ -43,7 +42,7 @@ export async function getTablesAction(
  * Get table schema
  */
 export async function getTableSchemaAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<Awaited<ReturnType<typeof getTableSchema>>>> {
   try {
@@ -63,7 +62,7 @@ export async function getTableSchemaAction(
  * Get table data with pagination
  */
 export async function getTableDataAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   options?: {
     page?: number
@@ -91,7 +90,7 @@ export async function getTableDataAction(
  * Create a new record in a table
  */
 export async function createRecordAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   data: Record<string, unknown>
 ): Promise<ServerActionResponse<Record<string, unknown>>> {
@@ -100,7 +99,7 @@ export async function createRecordAction(
     await requireProjectPermission(session.user.id, projectId, 'data.create')
 
     const result = await errorHandler(async () => {
-      const db = getProjectDb(projectId)
+      const db = await getProjectDb(projectId)
 
       // Validate data is not empty
       if (!data || Object.keys(data).length === 0) {
@@ -134,7 +133,7 @@ export async function createRecordAction(
  * Update a record in a table
  */
 export async function updateRecordAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   primaryKeyColumn: string,
   primaryKeyValue: unknown,
@@ -145,7 +144,7 @@ export async function updateRecordAction(
     await requireProjectPermission(session.user.id, projectId, 'data.update')
 
     const result = await errorHandler(async () => {
-      const db = getProjectDb(projectId)
+      const db = await getProjectDb(projectId)
 
       // Validate data is not empty
       if (!data || Object.keys(data).length === 0) {
@@ -187,7 +186,7 @@ export async function updateRecordAction(
  * Delete a record from a table
  */
 export async function deleteRecordAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   primaryKeyColumn: string,
   primaryKeyValue: unknown
@@ -197,7 +196,7 @@ export async function deleteRecordAction(
     await requireProjectPermission(session.user.id, projectId, 'data.delete')
 
     await errorHandler(async () => {
-      const db = getProjectDb(projectId)
+      const db = await getProjectDb(projectId)
 
       const query = `DELETE FROM ${tableName} WHERE ${primaryKeyColumn} = $1 RETURNING *`
 
@@ -227,7 +226,7 @@ export async function deleteRecordAction(
  * Bulk delete records from a table
  */
 export async function bulkDeleteRecordsAction(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   primaryKeyColumn: string,
   primaryKeyValues: unknown[]
@@ -237,7 +236,7 @@ export async function bulkDeleteRecordsAction(
     await requireProjectPermission(session.user.id, projectId, 'data.delete')
 
     const deletedCount = await errorHandler(async () => {
-      const db = getProjectDb(projectId)
+      const db = await getProjectDb(projectId)
 
       if (!primaryKeyValues || primaryKeyValues.length === 0) {
         throw new ValidationError('No records specified')

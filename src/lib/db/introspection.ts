@@ -4,7 +4,6 @@
  */
 
 import { sql } from 'drizzle-orm'
-import type { ProjectId } from '@/config/projects.config'
 import { getProjectDb } from './connections'
 import { errorHandler } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
@@ -41,9 +40,9 @@ export interface TableSchema {
 /**
  * Get all tables in a project database
  */
-export async function getProjectTables(projectId: ProjectId): Promise<TableInfo[]> {
+export async function getProjectTables(projectId: string): Promise<TableInfo[]> {
   return errorHandler(async () => {
-    const db = getProjectDb(projectId)
+    const db = await getProjectDb(projectId)
 
     const result = await db.execute<{
       table_name: string
@@ -63,7 +62,7 @@ export async function getProjectTables(projectId: ProjectId): Promise<TableInfo[
 
     logger.info(`Discovered ${result.length} tables in project: ${projectId}`)
 
-    return result.map((row) => ({
+    return result.map((row: { table_name: string; table_schema: string; row_count: number }) => ({
       name: row.table_name,
       schema: row.table_schema,
       rowCount: Number(row.row_count) || 0,
@@ -75,11 +74,11 @@ export async function getProjectTables(projectId: ProjectId): Promise<TableInfo[
  * Get table schema with column information
  */
 export async function getTableSchema(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string
 ): Promise<TableSchema> {
   return errorHandler(async () => {
-    const db = getProjectDb(projectId)
+    const db = await getProjectDb(projectId)
 
     // Get column information
     const columns = await db.execute<{
@@ -131,15 +130,15 @@ export async function getTableSchema(
         AND tc.table_name = ${tableName}
     `)
 
-    const pkSet = new Set(primaryKeys.map((pk) => pk.column_name))
+    const pkSet = new Set(primaryKeys.map((pk: { column_name: string }) => pk.column_name))
     const fkMap = new Map(
-      foreignKeys.map((fk) => [
+      foreignKeys.map((fk: { column_name: string; foreign_table_name: string; foreign_column_name: string }) => [
         fk.column_name,
         { table: fk.foreign_table_name, column: fk.foreign_column_name },
       ])
     )
 
-    const columnInfos: ColumnInfo[] = columns.map((col) => {
+    const columnInfos: ColumnInfo[] = columns.map((col: { column_name: string; data_type: string; is_nullable: string; column_default: string | null }) => {
       const fk = fkMap.get(col.column_name)
       return {
         name: col.column_name,
@@ -148,8 +147,8 @@ export async function getTableSchema(
         defaultValue: col.column_default,
         isPrimaryKey: pkSet.has(col.column_name),
         isForeignKey: !!fk,
-        foreignKeyTable: fk?.table || null,
-        foreignKeyColumn: fk?.column || null,
+        foreignKeyTable: fk ? fk.table : null,
+        foreignKeyColumn: fk ? fk.column : null,
       }
     })
 
@@ -163,8 +162,8 @@ export async function getTableSchema(
       tableName,
       schema: 'public',
       columns: columnInfos,
-      primaryKeys: primaryKeys.map((pk) => pk.column_name),
-      foreignKeys: foreignKeys.map((fk) => ({
+      primaryKeys: primaryKeys.map((pk: { column_name: string }) => pk.column_name),
+      foreignKeys: foreignKeys.map((fk: { column_name: string; foreign_table_name: string; foreign_column_name: string }) => ({
         column: fk.column_name,
         referencedTable: fk.foreign_table_name,
         referencedColumn: fk.foreign_column_name,
@@ -177,7 +176,7 @@ export async function getTableSchema(
  * Get data from a table with pagination
  */
 export async function getTableData<T extends Record<string, unknown> = Record<string, unknown>>(
-  projectId: ProjectId,
+  projectId: string,
   tableName: string,
   options: {
     page?: number
@@ -189,7 +188,7 @@ export async function getTableData<T extends Record<string, unknown> = Record<st
   } = {}
 ): Promise<{ data: T[]; total: number; page: number; limit: number }> {
   return errorHandler(async () => {
-    const db = getProjectDb(projectId)
+    const db = await getProjectDb(projectId)
     const page = options.page || 1
     const limit = options.limit || 50
     const offset = (page - 1) * limit
