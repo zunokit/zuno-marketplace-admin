@@ -1,0 +1,16 @@
+import { defineConfig } from 'drizzle-kit'
+import * as dotenv from 'dotenv'
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' })
+
+export default defineConfig({
+  schema: './src/lib/db/schemas/auth.schema.ts',
+  out: './drizzle/migrations',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.AUTH_DATABASE_URL!,
+  },
+  verbose: true,
+  strict: true,
+})
