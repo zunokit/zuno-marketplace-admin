@@ -4,6 +4,7 @@ import { LogOut, User, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/components/providers/auth-provider'
+import { logger } from '@/lib/utils/logger'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -42,7 +43,7 @@ export function UserMenu({ user }: UserMenuProps) {
       toast.success('Signed out successfully')
       router.push('/login')
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out error', error)
       toast.error('Failed to sign out')
     }
   }

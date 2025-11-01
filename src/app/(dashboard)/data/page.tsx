@@ -5,7 +5,7 @@
  * Browse and manage data from all tables in the active project
  */
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
 import {
   getTablesAction,
@@ -67,19 +67,17 @@ export default function DataBrowserPage() {
     return tableSchema.find((col) => col.isPrimaryKey)?.name || 'id'
   }, [tableSchema])
 
-  useEffect(() => {
-    if (activeProject) {
-      loadTables()
-    }
-  }, [activeProject])
+  const handleEdit = useCallback((record: Record<string, unknown>) => {
+    setSelectedRecord(record)
+    setEditDialogOpen(true)
+  }, [])
 
-  useEffect(() => {
-    if (selectedTable && activeProject) {
-      loadTableData(selectedTable)
-    }
-  }, [selectedTable, activeProject])
+  const handleDelete = useCallback((record: Record<string, unknown>) => {
+    setSelectedRecord(record)
+    setDeleteDialogOpen(true)
+  }, [])
 
-  async function loadTables() {
+  const loadTables = useCallback(async () => {
     if (!activeProject) return
 
     setIsLoadingTables(true)
@@ -98,9 +96,9 @@ export default function DataBrowserPage() {
     }
 
     setIsLoadingTables(false)
-  }
+  }, [activeProject, selectedTable])
 
-  async function loadTableData(tableName: string) {
+  const loadTableData = useCallback(async (tableName: string) => {
     if (!activeProject) return
 
     setIsLoadingData(true)
@@ -197,7 +195,23 @@ export default function DataBrowserPage() {
     }
 
     setIsLoadingData(false)
-  }
+  }, [activeProject, primaryKey, handleEdit, handleDelete])
+
+  useEffect(() => {
+    if (activeProject) {
+      void loadTables()
+    }
+    // loadTables is memoized with activeProject
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject])
+
+  useEffect(() => {
+    if (selectedTable && activeProject) {
+      void loadTableData(selectedTable)
+    }
+    // loadTableData is memoized with activeProject and selectedTable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTable, activeProject])
 
   function handleRefresh() {
     if (selectedTable) {
@@ -207,16 +221,6 @@ export default function DataBrowserPage() {
 
   function handleCreate() {
     setCreateDialogOpen(true)
-  }
-
-  function handleEdit(record: Record<string, unknown>) {
-    setSelectedRecord(record)
-    setEditDialogOpen(true)
-  }
-
-  function handleDelete(record: Record<string, unknown>) {
-    setSelectedRecord(record)
-    setDeleteDialogOpen(true)
   }
 
   function handleDialogSuccess() {

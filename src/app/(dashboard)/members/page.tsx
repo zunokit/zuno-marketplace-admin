@@ -5,7 +5,7 @@
  * Manage organization members and invitations
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
 import {
   getOrganizationMembersAction,
@@ -103,14 +103,7 @@ export default function MembersPage() {
   const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
 
-  useEffect(() => {
-    if (activeProject) {
-      loadMembers()
-      loadInvitations()
-    }
-  }, [activeProject])
-
-  async function loadMembers() {
+  const loadMembers = useCallback(async () => {
     if (!activeProject) return
 
     setIsLoadingMembers(true)
@@ -123,9 +116,9 @@ export default function MembersPage() {
     }
 
     setIsLoadingMembers(false)
-  }
+  }, [activeProject])
 
-  async function loadInvitations() {
+  const loadInvitations = useCallback(async () => {
     if (!activeProject) return
 
     setIsLoadingInvitations(true)
@@ -141,7 +134,16 @@ export default function MembersPage() {
     }
 
     setIsLoadingInvitations(false)
-  }
+  }, [activeProject])
+
+  useEffect(() => {
+    if (activeProject) {
+      void loadMembers()
+      void loadInvitations()
+    }
+    // loadMembers and loadInvitations are memoized with activeProject
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject])
 
   function handleUpdateRole(member: Member) {
     setSelectedMember(member)

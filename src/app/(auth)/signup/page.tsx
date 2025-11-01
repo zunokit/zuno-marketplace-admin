@@ -8,6 +8,8 @@ import { z } from 'zod'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@/components/providers/auth-provider'
+import { signUpWithRole } from '@/app/actions/auth'
+import { logger } from '@/lib/utils/logger'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -60,21 +62,33 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const result = await auth.signUp.email({
+      const result = await signUpWithRole({
         name: data.name,
         email: data.email,
         password: data.password,
       })
 
-      if (result.error) {
-        toast.error(result.error.message || 'Signup failed')
+      if (!result.success) {
+        toast.error(result.error || 'Signup failed')
         return
       }
 
-      toast.success('Account created successfully')
+      // Show success message with role info in development
+      if (process.env.NODE_ENV === 'development' && result.user?.role === 'super_admin') {
+        toast.success('Account created with super_admin role')
+      } else {
+        toast.success('Account created successfully')
+      }
+
+      // Sign in the user after successful signup
+      await auth.signIn.email({
+        email: data.email,
+        password: data.password,
+      })
+
       router.push('/dashboard')
     } catch (error) {
-      console.error('Signup error:', error)
+      logger.error('Signup error', error)
       toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)
