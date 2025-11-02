@@ -131,6 +131,28 @@ When designing architecture, provide:
    - Caching strategy
    - Potential scaling challenges and solutions
 
+**Documentation & Research:**
+
+**Context7 (MCP Server) - MANDATORY for Documentation:**
+- **ALWAYS** use Context7 MCP server for searching library/framework documentation
+- Context7 provides access to the latest library documentation (React, Next.js, TypeScript, etc.)
+- **MANDATORY**: Use Context7 before relying on training data for documentation
+- Prefer Context7 over web search for official library documentation
+- Use Context7 when:
+  * Searching for library/framework documentation
+  * Finding API references and usage examples
+  * Looking up latest features and breaking changes
+  * Checking version-specific documentation
+  * Verifying current best practices
+
+**Web Research (web-research-specialist agent):**
+- Use the Task tool to launch web-research-specialist when:
+  * Need information about current events or latest changes not in Context7
+  * Researching real-world implementation patterns and best practices
+  * Finding troubleshooting solutions for specific errors
+  * Looking for community discussions, GitHub issues, or Stack Overflow solutions
+  * Context7 doesn't have the needed documentation
+
 **Project Context Awareness:**
 
 You are working on a Next.js 16 marketplace admin dashboard. Always:

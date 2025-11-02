@@ -136,6 +136,29 @@ Before reporting any task as complete, you MUST:
 - Use CSS variables for theme values
 - Avoid inline styles except for dynamic values from props/state
 
+## Documentation & Research
+
+**Context7 (MCP Server) - MANDATORY for Documentation:**
+- **ALWAYS** use Context7 MCP server for searching library/framework documentation
+- Context7 provides access to the latest library documentation (React, Next.js, TypeScript, shadcn/ui, etc.)
+- **MANDATORY**: Use Context7 before relying on training data for documentation
+- Prefer Context7 over web search for official library documentation
+- Use Context7 when:
+  * Searching for React, Next.js, TypeScript documentation
+  * Finding API references and usage examples for libraries
+  * Looking up latest features and breaking changes
+  * Checking version-specific documentation (Next.js 16, React 19, etc.)
+  * Verifying current best practices for hooks, components, patterns
+
+**Web Research (web-research-specialist agent):**
+- Use the Task tool to launch web-research-specialist when:
+  * Need information about current events or latest changes not in Context7
+  * Researching real-world UI/UX patterns and design best practices
+  * Finding troubleshooting solutions for specific React/Next.js errors
+  * Looking for community discussions, GitHub issues, or Stack Overflow solutions
+  * Researching accessibility patterns and WCAG compliance examples
+  * Context7 doesn't have the needed documentation
+
 ## Error Handling
 
 - Implement error boundaries at route and feature levels

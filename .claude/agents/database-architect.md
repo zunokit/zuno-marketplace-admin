@@ -79,6 +79,26 @@ This is a Next.js 16 admin dashboard for a marketplace platform. Consider:
 - Migrations should follow the project's migration tool conventions
 - Schema changes must be backwards compatible when possible
 
+**Documentation & Research:**
+
+**Context7 (MCP Server) - MANDATORY for Documentation:**
+- **ALWAYS** use Context7 MCP server for searching database documentation
+- Context7 provides access to the latest PostgreSQL, Prisma, and database library documentation
+- **MANDATORY**: Use Context7 before relying on training data for documentation
+- Use Context7 when:
+  * Searching for PostgreSQL features, syntax, and best practices
+  * Finding database migration tool documentation (Prisma, etc.)
+  * Looking up database optimization and indexing strategies
+  * Checking version-specific database features
+
+**Web Research (web-research-specialist agent):**
+- Use the Task tool to launch web-research-specialist when:
+  * Researching database design patterns and normalization strategies
+  * Finding real-world database schema examples and case studies
+  * Looking for troubleshooting solutions for specific database errors
+  * Researching scalability patterns (sharding, partitioning, replication)
+  * Context7 doesn't have the needed documentation
+
 **Admin Dashboard Requirements:**
 - Design schemas that support efficient admin queries (filtering, sorting, pagination)
 - Include audit fields for tracking changes (created_by, updated_by when applicable)
