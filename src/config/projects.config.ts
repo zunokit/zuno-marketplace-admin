@@ -49,3 +49,11 @@ export const getProjectTypeMapping = ProjectRegistryService.getProjectTypeMappin
 export const getProjectsByType = ProjectRegistryService.getProjectsByType.bind(ProjectRegistryService)
 export const validateProjectAccess = ProjectRegistryService.validateProjectAccess.bind(ProjectRegistryService)
 export const getProjectCountByType = ProjectRegistryService.getProjectCountByType.bind(ProjectRegistryService)
+
+// Export environment-related functions
+export const getProjectEnvironments = ProjectRegistryService.getProjectEnvironments.bind(ProjectRegistryService)
+export const getActiveProjectEnvironment = ProjectRegistryService.getActiveProjectEnvironment.bind(ProjectRegistryService)
+export const getProjectEnvironmentDatabaseUrl = ProjectRegistryService.getProjectEnvironmentDatabaseUrl.bind(ProjectRegistryService)
+export const getProjectConfigWithEnvironment = ProjectRegistryService.getProjectConfigWithEnvironment.bind(ProjectRegistryService)
+export const getProjectWithEnvironments = ProjectRegistryService.getProjectWithEnvironments.bind(ProjectRegistryService)
+export const getAllProjectsWithEnvironments = ProjectRegistryService.getAllProjectsWithEnvironments.bind(ProjectRegistryService)

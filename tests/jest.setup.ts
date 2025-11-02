@@ -1,8 +1,12 @@
-import '@testing-library/jest-dom'
+import "@testing-library/jest-dom";
 
 // Mock environment variables for tests
-Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true })
-process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+Object.defineProperty(process.env, "NODE_ENV", {
+  value: "test",
+  writable: true,
+});
+process.env.ENCRYPTION_KEY =
+  "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
 // Silence console outputs during tests (unless debugging)
 global.console = {
@@ -13,5 +17,4 @@ global.console = {
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-}
-
+};

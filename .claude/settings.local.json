@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(printf:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(pnpm drizzle-kit generate:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm tsx:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

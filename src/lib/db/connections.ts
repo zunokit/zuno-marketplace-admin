@@ -1,23 +1,23 @@
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
-import { eq } from 'drizzle-orm'
-import { db } from './index'
-import { organization as organizationTable } from './schemas/auth.schema'
-import { decrypt } from '@/lib/utils/encryption'
-import { logger } from '@/lib/utils/logger'
-import { errorHandler, NotFoundError } from '@/lib/utils/error-handler'
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { eq } from "drizzle-orm";
+import { db } from "./index";
+import { organization as organizationTable } from "./schemas/auth.schema";
+import { decrypt } from "@/lib/utils/encryption";
+import { logger } from "@/lib/utils/logger";
+import { errorHandler, NotFoundError } from "@/lib/utils/error-handler";
 
 // Cache for database connections (singleton pattern for serverless)
-const projectDbConnections = new Map<string, ReturnType<typeof drizzle>>()
-const postgresClients = new Map<string, ReturnType<typeof postgres>>()
+const projectDbConnections = new Map<string, ReturnType<typeof drizzle>>();
+const postgresClients = new Map<string, ReturnType<typeof postgres>>();
 
 // Cache for project configurations (5 minutes TTL)
 interface ProjectConfigCache {
-  databaseUrl: string
-  timestamp: number
+  databaseUrl: string;
+  timestamp: number;
 }
-const projectConfigCache = new Map<string, ProjectConfigCache>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const projectConfigCache = new Map<string, ProjectConfigCache>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Get project configuration from database
@@ -25,41 +25,41 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 async function getProjectConfig(projectId: string): Promise<string> {
   return errorHandler(async () => {
     // Check cache first
-    const cached = projectConfigCache.get(projectId)
+    const cached = projectConfigCache.get(projectId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      logger.debug('Using cached project config', { projectId })
-      return cached.databaseUrl
+      logger.debug("Using cached project config", { projectId });
+      return cached.databaseUrl;
     }
 
     // Fetch from database
-    logger.debug('Fetching project config from database', { projectId })
+    logger.debug("Fetching project config from database", { projectId });
 
     const project = await db.query.organization.findFirst({
       where: eq(organizationTable.id, projectId),
       columns: {
         databaseUrl: true,
       },
-    })
+    });
 
     if (!project) {
-      throw new NotFoundError(`Project not found: ${projectId}`)
+      throw new NotFoundError(`Project not found: ${projectId}`);
     }
 
     if (!project.databaseUrl) {
-      throw new Error(`Database URL not configured for project: ${projectId}`)
+      throw new Error(`Database URL not configured for project: ${projectId}`);
     }
 
     // Decrypt database URL
-    const decryptedUrl = decrypt(project.databaseUrl)
+    const decryptedUrl = decrypt(project.databaseUrl);
 
     // Cache for future use
     projectConfigCache.set(projectId, {
       databaseUrl: decryptedUrl,
       timestamp: Date.now(),
-    })
+    });
 
-    return decryptedUrl
-  }, 'getProjectConfig')
+    return decryptedUrl;
+  }, "getProjectConfig");
 }
 
 /**
@@ -69,32 +69,33 @@ async function getProjectConfig(projectId: string): Promise<string> {
 export async function getProjectDb(projectId: string) {
   // Check if connection already exists
   if (projectDbConnections.has(projectId)) {
-    logger.debug('Reusing existing database connection', { projectId })
-    return projectDbConnections.get(projectId)!
+    logger.debug("Reusing existing database connection", { projectId });
+    return projectDbConnections.get(projectId)!;
   }
 
-  logger.info('Creating new database connection', { projectId })
+  logger.info("Creating new database connection", { projectId });
 
   // Get project configuration from database
-  const databaseUrl = await getProjectConfig(projectId)
+  const databaseUrl = await getProjectConfig(projectId);
 
   // Create new PostgreSQL client
-  const client = postgres(databaseUrl, {
+  const connection = postgres(databaseUrl, {
     max: 10,
     idle_timeout: 20,
     connect_timeout: 10,
-  })
+    debug: process.env.NODE_ENV !== "production",
+  });
 
   // Create Drizzle instance
-  const drizzleDb = drizzle(client)
+  const drizzleDb = drizzle(connection);
 
   // Cache the connections
-  postgresClients.set(projectId, client)
-  projectDbConnections.set(projectId, drizzleDb)
+  postgresClients.set(projectId, connection);
+  projectDbConnections.set(projectId, drizzleDb);
 
-  logger.info('Database connection established', { projectId })
+  logger.info("Database connection established", { projectId });
 
-  return drizzleDb
+  return drizzleDb;
 }
 
 /**
@@ -102,11 +103,11 @@ export async function getProjectDb(projectId: string) {
  */
 export function clearProjectConfigCache(projectId?: string) {
   if (projectId) {
-    projectConfigCache.delete(projectId)
-    logger.debug('Cleared project config cache', { projectId })
+    projectConfigCache.delete(projectId);
+    logger.debug("Cleared project config cache", { projectId });
   } else {
-    projectConfigCache.clear()
-    logger.debug('Cleared all project config cache')
+    projectConfigCache.clear();
+    logger.debug("Cleared all project config cache");
   }
 }
 
@@ -114,13 +115,13 @@ export function clearProjectConfigCache(projectId?: string) {
  * Close a specific project database connection
  */
 export async function closeProjectDb(projectId: string) {
-  const client = postgresClients.get(projectId)
+  const client = postgresClients.get(projectId);
   if (client) {
-    await client.end()
-    postgresClients.delete(projectId)
-    projectDbConnections.delete(projectId)
-    projectConfigCache.delete(projectId)
-    logger.info('Closed database connection', { projectId })
+    await client.end();
+    postgresClients.delete(projectId);
+    projectDbConnections.delete(projectId);
+    projectConfigCache.delete(projectId);
+    logger.info("Closed database connection", { projectId });
   }
 }
 
@@ -128,23 +129,25 @@ export async function closeProjectDb(projectId: string) {
  * Close all project database connections
  */
 export async function closeAllProjectDbs() {
-  logger.info('Closing all database connections', { count: postgresClients.size })
+  logger.info("Closing all database connections", {
+    count: postgresClients.size,
+  });
 
   const closePromises = Array.from(postgresClients.values()).map((client) =>
     client.end()
-  )
-  await Promise.all(closePromises)
+  );
+  await Promise.all(closePromises);
 
-  postgresClients.clear()
-  projectDbConnections.clear()
-  projectConfigCache.clear()
+  postgresClients.clear();
+  projectDbConnections.clear();
+  projectConfigCache.clear();
 
-  logger.info('All database connections closed')
+  logger.info("All database connections closed");
 }
 
 // Cleanup on process exit (important for serverless)
-if (typeof window === 'undefined') {
-  process.on('beforeExit', async () => {
-    await closeAllProjectDbs()
-  })
+if (typeof window === "undefined") {
+  process.on("beforeExit", async () => {
+    await closeAllProjectDbs();
+  });
 }

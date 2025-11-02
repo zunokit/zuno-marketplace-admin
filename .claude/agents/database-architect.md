@@ -83,11 +83,11 @@ This is a Next.js 16 admin dashboard for a marketplace platform. Consider:
 
 **Context7 (MCP Server) - MANDATORY for Documentation:**
 - **ALWAYS** use Context7 MCP server for searching database documentation
-- Context7 provides access to the latest PostgreSQL, Prisma, and database library documentation
+- Context7 provides access to the latest PostgreSQL, Drizzle, and database library documentation
 - **MANDATORY**: Use Context7 before relying on training data for documentation
 - Use Context7 when:
   * Searching for PostgreSQL features, syntax, and best practices
-  * Finding database migration tool documentation (Prisma, etc.)
+  * Finding database migration tool documentation (Drizzle, etc.)
   * Looking up database optimization and indexing strategies
   * Checking version-specific database features
 

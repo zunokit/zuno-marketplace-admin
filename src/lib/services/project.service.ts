@@ -1,5 +1,5 @@
-import { eq, and, desc, asc, ilike, count, gte, lte } from 'drizzle-orm'
-import { db } from '@/lib/db'
+import { eq, and, desc, asc, ilike, count, gte, lte } from "drizzle-orm";
+import { db } from "@/lib/db";
 import {
   organization,
   projectEnvironment,
@@ -7,8 +7,8 @@ import {
   type Organization,
   type NewOrganization,
   type NewProjectEnvironment,
-  type NewProjectAuditLog
-} from '@/lib/db/schemas/auth.schema'
+  type NewProjectAuditLog,
+} from "@/lib/db/schemas/auth.schema";
 import {
   CreateProjectInput,
   UpdateProjectInput,
@@ -17,10 +17,9 @@ import {
   UpdateProjectEnvironmentInput,
   ProjectEnvironmentQueryInput,
   ProjectAuditLogInput,
-  AuditLogQueryInput
-} from '@/lib/validations/project.validation'
-import { encrypt, decrypt, generateSecureId } from '@/lib/crypto/encryption'
-import { revalidatePath } from 'next/cache'
+  AuditLogQueryInput,
+} from "@/lib/validations/project.validation";
+import { encrypt, decrypt, generateSecureId } from "@/lib/crypto/encryption";
 
 /**
  * Project service class
@@ -29,12 +28,18 @@ export class ProjectService {
   /**
    * Create a new project
    */
-  static async createProject(data: CreateProjectInput, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async createProject(
+    data: CreateProjectInput,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
-      const projectId = generateSecureId()
+      const projectId = generateSecureId();
 
       // Encrypt database URL if provided
-      const encryptedDatabaseUrl = data.databaseUrl ? encrypt(data.databaseUrl) : null
+      const encryptedDatabaseUrl = data.databaseUrl
+        ? encrypt(data.databaseUrl)
+        : null;
 
       const projectData: NewOrganization = {
         id: projectId,
@@ -49,17 +54,20 @@ export class ProjectService {
         metadataJson: data.metadata || {},
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
       // Create project
-      const [project] = await db.insert(organization).values(projectData).returning()
+      const [project] = await db
+        .insert(organization)
+        .values(projectData)
+        .returning();
 
       // Log audit trail
       await this.logAudit({
         organizationId: projectId,
         userId,
-        action: 'created',
-        entityType: 'project',
+        action: "created",
+        entityType: "project",
         entityId: projectId,
         newValues: {
           name: data.name,
@@ -70,64 +78,73 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath('/projects')
-      revalidatePath('/api/projects')
+      // Note: Revalidation is handled in Server Actions (project-actions.ts)
+      // Services should not call revalidatePath/revalidateTag as they may be used in client components
 
-      return project
+      return project;
     } catch (error) {
-      throw new Error(`Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to create project: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Update an existing project
    */
-  static async updateProject(data: UpdateProjectInput, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async updateProject(
+    data: UpdateProjectInput,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
       // Get current project for audit log
       const [currentProject] = await db
         .select()
         .from(organization)
         .where(eq(organization.id, data.id!))
-        .limit(1)
+        .limit(1);
 
       if (!currentProject) {
-        throw new Error('Project not found')
+        throw new Error("Project not found");
       }
 
       // Prepare update data
       const updateData: Partial<NewOrganization> = {
         updatedAt: new Date(),
-      }
+      };
 
-      if (data.name !== undefined) updateData.name = data.name
-      if (data.slug !== undefined) updateData.slug = data.slug
-      if (data.description !== undefined) updateData.description = data.description
-      if (data.projectType !== undefined) updateData.projectType = data.projectType
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.slug !== undefined) updateData.slug = data.slug;
+      if (data.description !== undefined)
+        updateData.description = data.description;
+      if (data.projectType !== undefined)
+        updateData.projectType = data.projectType;
       if (data.databaseUrl !== undefined) {
-        updateData.databaseUrl = encrypt(data.databaseUrl)
+        updateData.databaseUrl = encrypt(data.databaseUrl);
       }
-      if (data.status !== undefined) updateData.status = data.status
-      if (data.icon !== undefined) updateData.icon = data.icon
-      if (data.color !== undefined) updateData.color = data.color
-      if (data.metadata !== undefined) updateData.metadataJson = data.metadata
+      if (data.status !== undefined) updateData.status = data.status;
+      if (data.icon !== undefined) updateData.icon = data.icon;
+      if (data.color !== undefined) updateData.color = data.color;
+      if (data.metadata !== undefined) updateData.metadataJson = data.metadata;
 
       // Update project
       const [updatedProject] = await db
         .update(organization)
         .set(updateData)
         .where(eq(organization.id, data.id!))
-        .returning()
+        .returning();
 
       // Log audit trail
       await this.logAudit({
         organizationId: data.id!,
         userId,
-        action: 'updated',
-        entityType: 'project',
+        action: "updated",
+        entityType: "project",
         entityId: data.id!,
         oldValues: {
           name: currentProject.name,
@@ -145,44 +162,49 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath('/projects')
-      revalidatePath('/api/projects')
-      revalidatePath(`/projects/${data.id}`)
+      // Note: Revalidation is handled in Server Actions (project-actions.ts)
 
-      return updatedProject
+      return updatedProject;
     } catch (error) {
-      throw new Error(`Failed to update project: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to update project: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Delete a project
    */
-  static async deleteProject(projectId: string, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async deleteProject(
+    projectId: string,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
       // Get project for audit log
       const [project] = await db
         .select()
         .from(organization)
         .where(eq(organization.id, projectId))
-        .limit(1)
+        .limit(1);
 
       if (!project) {
-        throw new Error('Project not found')
+        throw new Error("Project not found");
       }
 
       // Delete project (cascade will handle related records)
-      await db.delete(organization).where(eq(organization.id, projectId))
+      await db.delete(organization).where(eq(organization.id, projectId));
 
       // Log audit trail
       await this.logAudit({
         organizationId: projectId,
         userId,
-        action: 'deleted',
-        entityType: 'project',
+        action: "deleted",
+        entityType: "project",
         entityId: projectId,
         oldValues: {
           name: project.name,
@@ -190,16 +212,17 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath('/projects')
-      revalidatePath('/api/projects')
-      revalidatePath(`/projects/${projectId}`)
+      // Note: Revalidation is handled in Server Actions (project-actions.ts)
 
-      return project
+      return project;
     } catch (error) {
-      throw new Error(`Failed to delete project: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to delete project: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -212,20 +235,24 @@ export class ProjectService {
         .select()
         .from(organization)
         .where(eq(organization.id, projectId))
-        .limit(1)
+        .limit(1);
 
       if (!project) {
-        return null
+        return null;
       }
 
       // Decrypt database URL if present
       if (project.databaseUrl) {
-        project.databaseUrl = decrypt(project.databaseUrl)
+        project.databaseUrl = decrypt(project.databaseUrl);
       }
 
-      return project
+      return project;
     } catch (error) {
-      throw new Error(`Failed to get project: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get project: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -238,20 +265,24 @@ export class ProjectService {
         .select()
         .from(organization)
         .where(eq(organization.slug, slug))
-        .limit(1)
+        .limit(1);
 
       if (!project) {
-        return null
+        return null;
       }
 
       // Decrypt database URL if present
       if (project.databaseUrl) {
-        project.databaseUrl = decrypt(project.databaseUrl)
+        project.databaseUrl = decrypt(project.databaseUrl);
       }
 
-      return project
+      return project;
     } catch (error) {
-      throw new Error(`Failed to get project by slug: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get project by slug: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -260,47 +291,60 @@ export class ProjectService {
    */
   static async getProjects(query: ProjectQueryInput) {
     try {
-      const { page, limit, search, status, projectType, sortBy, sortOrder } = query
-      const offset = (page - 1) * limit
+      const { page, limit, search, status, projectType, sortBy, sortOrder } =
+        query;
+      const offset = (page - 1) * limit;
 
       // Build query conditions
-      const conditions = []
+      const conditions = [];
 
       if (search) {
-        conditions.push(ilike(organization.name, `%${search}%`))
+        conditions.push(ilike(organization.name, `%${search}%`));
       }
 
       if (status) {
-        conditions.push(eq(organization.status, status))
+        conditions.push(eq(organization.status, status));
       }
 
       if (projectType) {
-        conditions.push(eq(organization.projectType, projectType))
+        conditions.push(eq(organization.projectType, projectType));
       }
 
       // Get total count
       const [{ count: totalCount }] = await db
         .select({ count: count() })
         .from(organization)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
 
       // Build order by - use switch for type safety
-      let orderBy
+      let orderBy;
       switch (sortBy) {
-        case 'name':
-          orderBy = sortOrder === 'desc' ? desc(organization.name) : asc(organization.name)
-          break
-        case 'createdAt':
-          orderBy = sortOrder === 'desc' ? desc(organization.createdAt) : asc(organization.createdAt)
-          break
-        case 'updatedAt':
-          orderBy = sortOrder === 'desc' ? desc(organization.updatedAt) : asc(organization.updatedAt)
-          break
-        case 'status':
-          orderBy = sortOrder === 'desc' ? desc(organization.status) : asc(organization.status)
-          break
+        case "name":
+          orderBy =
+            sortOrder === "desc"
+              ? desc(organization.name)
+              : asc(organization.name);
+          break;
+        case "createdAt":
+          orderBy =
+            sortOrder === "desc"
+              ? desc(organization.createdAt)
+              : asc(organization.createdAt);
+          break;
+        case "updatedAt":
+          orderBy =
+            sortOrder === "desc"
+              ? desc(organization.updatedAt)
+              : asc(organization.updatedAt);
+          break;
+        case "status":
+          orderBy =
+            sortOrder === "desc"
+              ? desc(organization.status)
+              : asc(organization.status);
+          break;
         default:
-          orderBy = desc(organization.createdAt) // Default sort
+          orderBy = desc(organization.createdAt); // Default sort
       }
 
       // Get projects
@@ -310,13 +354,13 @@ export class ProjectService {
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(orderBy)
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
       // Decrypt database URLs
-      const projectsWithDecryptedUrls = projects.map(project => ({
+      const projectsWithDecryptedUrls = projects.map((project) => ({
         ...project,
         databaseUrl: project.databaseUrl ? decrypt(project.databaseUrl) : null,
-      }))
+      }));
 
       return {
         projects: projectsWithDecryptedUrls,
@@ -326,21 +370,29 @@ export class ProjectService {
           total: Number(totalCount),
           totalPages: Math.ceil(Number(totalCount) / limit),
         },
-      }
+      };
     } catch (error) {
-      throw new Error(`Failed to get projects: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get projects: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Create project environment
    */
-  static async createProjectEnvironment(data: CreateProjectEnvironmentInput, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async createProjectEnvironment(
+    data: CreateProjectEnvironmentInput,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
-      const environmentId = generateSecureId()
+      const environmentId = generateSecureId();
 
       // Encrypt database URL
-      const encryptedDatabaseUrl = encrypt(data.databaseUrl)
+      const encryptedDatabaseUrl = encrypt(data.databaseUrl);
 
       const environmentData: NewProjectEnvironment = {
         id: environmentId,
@@ -352,17 +404,20 @@ export class ProjectService {
         isActive: data.isActive ?? true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
       // Create environment
-      const [environment] = await db.insert(projectEnvironment).values(environmentData).returning()
+      const [environment] = await db
+        .insert(projectEnvironment)
+        .values(environmentData)
+        .returning();
 
       // Log audit trail
       await this.logAudit({
         organizationId: data.organizationId,
         userId,
-        action: 'environment_added',
-        entityType: 'environment',
+        action: "environment_added",
+        entityType: "environment",
         entityId: environmentId,
         newValues: {
           name: data.name,
@@ -372,60 +427,67 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath(`/projects/${data.organizationId}/environments`)
-      revalidatePath(`/api/projects/${data.organizationId}/environments`)
+      // Note: Revalidation is handled in Server Actions
 
-      return environment
+      return environment;
     } catch (error) {
-      throw new Error(`Failed to create project environment: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to create project environment: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Update project environment
    */
-  static async updateProjectEnvironment(data: UpdateProjectEnvironmentInput, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async updateProjectEnvironment(
+    data: UpdateProjectEnvironmentInput,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
       // Get current environment
       const [currentEnvironment] = await db
         .select()
         .from(projectEnvironment)
         .where(eq(projectEnvironment.id, data.id!))
-        .limit(1)
+        .limit(1);
 
       if (!currentEnvironment) {
-        throw new Error('Environment not found')
+        throw new Error("Environment not found");
       }
 
       // Prepare update data
       const updateData: Partial<NewProjectEnvironment> = {
         updatedAt: new Date(),
-      }
+      };
 
-      if (data.name !== undefined) updateData.name = data.name
-      if (data.slug !== undefined) updateData.slug = data.slug
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.slug !== undefined) updateData.slug = data.slug;
       if (data.databaseUrl !== undefined) {
-        updateData.databaseUrl = encrypt(data.databaseUrl)
+        updateData.databaseUrl = encrypt(data.databaseUrl);
       }
-      if (data.description !== undefined) updateData.description = data.description
-      if (data.isActive !== undefined) updateData.isActive = data.isActive
+      if (data.description !== undefined)
+        updateData.description = data.description;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
       // Update environment
       const [updatedEnvironment] = await db
         .update(projectEnvironment)
         .set(updateData)
         .where(eq(projectEnvironment.id, data.id!))
-        .returning()
+        .returning();
 
       // Log audit trail
       await this.logAudit({
         organizationId: currentEnvironment.organizationId,
         userId,
-        action: 'environment_updated',
-        entityType: 'environment',
+        action: "environment_updated",
+        entityType: "environment",
         entityId: data.id!,
         oldValues: {
           name: currentEnvironment.name,
@@ -439,43 +501,51 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath(`/projects/${currentEnvironment.organizationId}/environments`)
-      revalidatePath(`/api/projects/${currentEnvironment.organizationId}/environments`)
+      // Note: Revalidation is handled in Server Actions
 
-      return updatedEnvironment
+      return updatedEnvironment;
     } catch (error) {
-      throw new Error(`Failed to update project environment: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to update project environment: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Delete project environment
    */
-  static async deleteProjectEnvironment(environmentId: string, userId: string, requestInfo?: { ip?: string; userAgent?: string }) {
+  static async deleteProjectEnvironment(
+    environmentId: string,
+    userId: string,
+    requestInfo?: { ip?: string; userAgent?: string }
+  ) {
     try {
       // Get environment for audit log
       const [environment] = await db
         .select()
         .from(projectEnvironment)
         .where(eq(projectEnvironment.id, environmentId))
-        .limit(1)
+        .limit(1);
 
       if (!environment) {
-        throw new Error('Environment not found')
+        throw new Error("Environment not found");
       }
 
       // Delete environment
-      await db.delete(projectEnvironment).where(eq(projectEnvironment.id, environmentId))
+      await db
+        .delete(projectEnvironment)
+        .where(eq(projectEnvironment.id, environmentId));
 
       // Log audit trail
       await this.logAudit({
         organizationId: environment.organizationId,
         userId,
-        action: 'environment_deleted',
-        entityType: 'environment',
+        action: "environment_deleted",
+        entityType: "environment",
         entityId: environmentId,
         oldValues: {
           name: environment.name,
@@ -483,15 +553,17 @@ export class ProjectService {
         },
         ipAddress: requestInfo?.ip,
         userAgent: requestInfo?.userAgent,
-      })
+      });
 
-      // Revalidate cache
-      revalidatePath(`/projects/${environment.organizationId}/environments`)
-      revalidatePath(`/api/projects/${environment.organizationId}/environments`)
+      // Note: Revalidation is handled in Server Actions
 
-      return environment
+      return environment;
     } catch (error) {
-      throw new Error(`Failed to delete project environment: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to delete project environment: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -500,25 +572,27 @@ export class ProjectService {
    */
   static async getProjectEnvironments(query: ProjectEnvironmentQueryInput) {
     try {
-      const { organizationId, page, limit, search, isActive } = query
-      const offset = (page - 1) * limit
+      const { organizationId, page, limit, search, isActive } = query;
+      const offset = (page - 1) * limit;
 
       // Build query conditions
-      const conditions = [eq(projectEnvironment.organizationId, organizationId)]
+      const conditions = [
+        eq(projectEnvironment.organizationId, organizationId),
+      ];
 
       if (search) {
-        conditions.push(ilike(projectEnvironment.name, `%${search}%`))
+        conditions.push(ilike(projectEnvironment.name, `%${search}%`));
       }
 
       if (isActive !== undefined) {
-        conditions.push(eq(projectEnvironment.isActive, isActive))
+        conditions.push(eq(projectEnvironment.isActive, isActive));
       }
 
       // Get total count
       const [{ count: totalCount }] = await db
         .select({ count: count() })
         .from(projectEnvironment)
-        .where(and(...conditions))
+        .where(and(...conditions));
 
       // Get environments
       const environments = await db
@@ -527,13 +601,13 @@ export class ProjectService {
         .where(and(...conditions))
         .orderBy(desc(projectEnvironment.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
       // Decrypt database URLs
-      const environmentsWithDecryptedUrls = environments.map(environment => ({
+      const environmentsWithDecryptedUrls = environments.map((environment) => ({
         ...environment,
         databaseUrl: decrypt(environment.databaseUrl),
-      }))
+      }));
 
       return {
         environments: environmentsWithDecryptedUrls,
@@ -543,9 +617,13 @@ export class ProjectService {
           total: Number(totalCount),
           totalPages: Math.ceil(Number(totalCount) / limit),
         },
-      }
+      };
     } catch (error) {
-      throw new Error(`Failed to get project environments: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get project environments: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -567,12 +645,12 @@ export class ProjectService {
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         createdAt: new Date(),
-      }
+      };
 
-      await db.insert(projectAuditLog).values(auditData)
+      await db.insert(projectAuditLog).values(auditData);
     } catch (error) {
       // Log audit errors but don't throw to avoid breaking main operations
-      console.error('Failed to log audit trail:', error)
+      console.error("Failed to log audit trail:", error);
     }
   }
 
@@ -581,23 +659,35 @@ export class ProjectService {
    */
   static async getAuditLogs(query: AuditLogQueryInput) {
     try {
-      const { organizationId, page, limit, action, entityType, userId, startDate, endDate } = query
-      const offset = (page - 1) * limit
+      const {
+        organizationId,
+        page,
+        limit,
+        action,
+        entityType,
+        userId,
+        startDate,
+        endDate,
+      } = query;
+      const offset = (page - 1) * limit;
 
       // Build query conditions
-      const conditions = [eq(projectAuditLog.organizationId, organizationId)]
+      const conditions = [eq(projectAuditLog.organizationId, organizationId)];
 
-      if (action) conditions.push(eq(projectAuditLog.action, action))
-      if (entityType) conditions.push(eq(projectAuditLog.entityType, entityType))
-      if (userId) conditions.push(eq(projectAuditLog.userId, userId))
-      if (startDate) conditions.push(gte(projectAuditLog.createdAt, new Date(startDate)))
-      if (endDate) conditions.push(lte(projectAuditLog.createdAt, new Date(endDate)))
+      if (action) conditions.push(eq(projectAuditLog.action, action));
+      if (entityType)
+        conditions.push(eq(projectAuditLog.entityType, entityType));
+      if (userId) conditions.push(eq(projectAuditLog.userId, userId));
+      if (startDate)
+        conditions.push(gte(projectAuditLog.createdAt, new Date(startDate)));
+      if (endDate)
+        conditions.push(lte(projectAuditLog.createdAt, new Date(endDate)));
 
       // Get total count
       const [{ count: totalCount }] = await db
         .select({ count: count() })
         .from(projectAuditLog)
-        .where(and(...conditions))
+        .where(and(...conditions));
 
       // Get audit logs
       const logs = await db
@@ -606,7 +696,7 @@ export class ProjectService {
         .where(and(...conditions))
         .orderBy(desc(projectAuditLog.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
       return {
         logs,
@@ -616,9 +706,13 @@ export class ProjectService {
           total: Number(totalCount),
           totalPages: Math.ceil(Number(totalCount) / limit),
         },
-      }
+      };
     } catch (error) {
-      throw new Error(`Failed to get audit logs: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get audit logs: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -630,20 +724,25 @@ export class ProjectService {
       const projects = await db
         .select()
         .from(organization)
-        .where(eq(organization.status, 'active'))
+        .where(eq(organization.status, "active"));
 
       // Transform to registry format with decrypted URLs
-      const registry: Record<string, {
-  id: string
-  name: string
-  slug: string
-  databaseUrl: string | null
-  description: string | null
-  metadata: Record<string, unknown> | null
-}> = {}
+      const registry: Record<
+        string,
+        {
+          id: string;
+          name: string;
+          slug: string;
+          databaseUrl: string | null;
+          description: string | null;
+          metadata: Record<string, unknown> | null;
+        }
+      > = {};
 
       for (const project of projects) {
-        const decryptedDatabaseUrl = project.databaseUrl ? decrypt(project.databaseUrl) : null
+        const decryptedDatabaseUrl = project.databaseUrl
+          ? decrypt(project.databaseUrl)
+          : null;
 
         registry[project.id] = {
           id: project.id,
@@ -651,18 +750,25 @@ export class ProjectService {
           slug: project.slug,
           databaseUrl: decryptedDatabaseUrl,
           description: project.description,
-          metadata: (project.metadataJson && typeof project.metadataJson === 'object' && Object.keys(project.metadataJson).length > 0)
-          ? project.metadataJson as Record<string, unknown>
-          : {
-              icon: project.icon || undefined,
-              color: project.color || undefined,
-            },
-        }
+          metadata:
+            project.metadataJson &&
+            typeof project.metadataJson === "object" &&
+            Object.keys(project.metadataJson).length > 0
+              ? (project.metadataJson as Record<string, unknown>)
+              : {
+                  icon: project.icon || undefined,
+                  color: project.color || undefined,
+                },
+        };
       }
 
-      return registry
+      return registry;
     } catch (error) {
-      throw new Error(`Failed to get projects registry: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get projects registry: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 }
