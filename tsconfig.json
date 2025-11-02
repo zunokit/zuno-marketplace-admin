@@ -38,9 +38,11 @@
     "build",
     "dist",
     ".claude",
+    "scripts",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "**/*.spec.tsx",
+    "jest.config.ts"
   ]
 }
