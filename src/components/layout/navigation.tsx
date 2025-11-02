@@ -161,7 +161,7 @@ export function Navigation({ collapsed = false }: NavigationProps) {
         )}
       >
         <Icon className={cn(
-          'h-4 w-4 flex-shrink-0',
+          'h-4 w-4 shrink-0',
           isActive && 'text-primary-foreground'
         )} />
         {!collapsed && (
