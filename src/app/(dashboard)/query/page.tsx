@@ -11,7 +11,7 @@ import {
   executeQueryAction,
   type QueryResult,
   type SavedQuery,
-} from '@/actions/query/query-actions'
+} from '@/app/actions/query/query-actions'
 import { SqlEditor } from '@/components/query/sql-editor'
 import { QueryResults, exportToCsv, exportToJson } from '@/components/query/query-results'
 import {

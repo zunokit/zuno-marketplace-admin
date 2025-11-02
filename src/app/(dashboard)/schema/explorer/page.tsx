@@ -7,7 +7,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
-import { getCompleteSchemaAction, getDatabaseStatisticsAction, type CompleteSchemaInfo, type DatabaseStatistics } from '@/actions/schema/schema-actions'
+import { getCompleteSchemaAction, getDatabaseStatisticsAction, type CompleteSchemaInfo, type DatabaseStatistics } from '@/app/actions/schema/schema-actions'
 import { SchemaExplorerSidebar } from '@/components/schema/schema-explorer-sidebar'
 import { TableDetailsPanel } from '@/components/schema/table-details-panel'
 import { SchemaStatistics } from '@/components/schema/schema-statistics'

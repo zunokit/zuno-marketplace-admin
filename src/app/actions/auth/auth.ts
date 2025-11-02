@@ -53,7 +53,7 @@ export async function signUpWithRole(
     }
 
     // In development mode, automatically assign super_admin role
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV !== 'production') {
       try {
         // Update user role directly in database using Drizzle
         await db

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getAllProjectsAction } from '@/actions/projects/project-actions'
+import { getAllProjectsAction } from '@/app/actions/projects/project-actions'
 import { Button } from '@/components/ui/button'
 import {
   Card,

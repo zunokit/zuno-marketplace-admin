@@ -11,7 +11,7 @@ import {
   getTablesAction,
   getTableDataAction,
   getTableSchemaAction,
-} from '@/actions/data/table-actions'
+} from '@/app/actions/data/table-actions'
 import {
   Card,
   CardContent,

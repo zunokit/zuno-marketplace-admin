@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,24 +10,24 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { removeMemberAction } from '@/actions/members/member-actions'
-import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+} from "@/components/ui/alert-dialog";
+import { removeMemberAction } from "@/app/actions/members/member-actions";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 type Member = {
-  id: string
-  userName: string
-  userEmail: string
-  role: string
-}
+  id: string;
+  userName: string;
+  userEmail: string;
+  role: string;
+};
 
 type RemoveMemberDialogProps = {
-  member: Member
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: () => void
-}
+  member: Member;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+};
 
 export function RemoveMemberDialog({
   member,
@@ -35,22 +35,22 @@ export function RemoveMemberDialog({
   onOpenChange,
   onSuccess,
 }: RemoveMemberDialogProps) {
-  const [isRemoving, setIsRemoving] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false);
 
   async function handleRemove() {
-    setIsRemoving(true)
+    setIsRemoving(true);
 
-    const result = await removeMemberAction(member.id)
+    const result = await removeMemberAction(member.id);
 
     if (result.success) {
-      toast.success(result.message || 'Member removed successfully')
-      onOpenChange(false)
-      onSuccess()
+      toast.success(result.message || "Member removed successfully");
+      onOpenChange(false);
+      onSuccess();
     } else {
-      toast.error('error' in result ? result.error : 'Failed to remove member')
+      toast.error("error" in result ? result.error : "Failed to remove member");
     }
 
-    setIsRemoving(false)
+    setIsRemoving(false);
   }
 
   return (
@@ -59,9 +59,11 @@ export function RemoveMemberDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Remove Member</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to remove{' '}
-            <strong className="font-semibold text-foreground">{member.userName}</strong>
-            {' '}({member.userEmail}) from this project?
+            Are you sure you want to remove{" "}
+            <strong className="font-semibold text-foreground">
+              {member.userName}
+            </strong>{" "}
+            ({member.userEmail}) from this project?
             <br />
             <br />
             They will immediately lose access to all project data and features.
@@ -80,10 +82,10 @@ export function RemoveMemberDialog({
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isRemoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isRemoving ? 'Removing...' : 'Remove Member'}
+            {isRemoving ? "Removing..." : "Remove Member"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

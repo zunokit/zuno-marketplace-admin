@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { inviteUserAction } from '@/actions/members/member-actions'
+import { inviteUserAction } from '@/app/actions/members/member-actions'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 

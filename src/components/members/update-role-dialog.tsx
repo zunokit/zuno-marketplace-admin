@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { updateMemberRoleAction } from '@/actions/members/member-actions'
+import { updateMemberRoleAction } from '@/app/actions/members/member-actions'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 

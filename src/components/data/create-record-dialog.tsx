@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DynamicForm, type FieldSchema } from './dynamic-form'
-import { createRecordAction } from '@/actions/data/table-actions'
+import { createRecordAction } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
 
 type CreateRecordDialogProps = {

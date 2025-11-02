@@ -8,7 +8,7 @@ import { z } from 'zod'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@/components/providers/auth-provider'
-import { signUpWithRole } from '@/app/actions/auth'
+import { signUpWithRole } from '@/app/actions/auth/auth'
 import { logger } from '@/lib/utils/logger'
 import { Button } from '@/components/ui/button'
 import {

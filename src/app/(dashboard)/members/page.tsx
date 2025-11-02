@@ -11,7 +11,7 @@ import {
   getOrganizationMembersAction,
   getOrganizationInvitationsAction,
   revokeInvitationAction,
-} from '@/actions/members/member-actions'
+} from '@/app/actions/members/member-actions'
 import {
   Card,
   CardContent,

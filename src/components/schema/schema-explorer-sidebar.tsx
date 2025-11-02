@@ -6,7 +6,7 @@
  */
 
 import { useState, useMemo } from 'react'
-import { type CompleteSchemaInfo } from '@/actions/schema/schema-actions'
+import { type CompleteSchemaInfo } from '@/app/actions/schema/schema-actions'
 import {
   Card,
   CardContent,

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DynamicForm, type FieldSchema } from './dynamic-form'
-import { updateRecordAction } from '@/actions/data/table-actions'
+import { updateRecordAction } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
 
 type EditRecordDialogProps = {

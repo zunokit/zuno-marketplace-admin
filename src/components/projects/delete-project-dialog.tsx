@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { deleteProjectAction } from '@/actions/projects/project-actions'
+import { deleteProjectAction } from '@/app/actions/projects/project-actions'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 

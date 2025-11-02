@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { testProjectConnectionAction } from '@/actions/projects/project-actions'
+import { testProjectConnectionAction } from '@/app/actions/projects/project-actions'
 import { toast } from 'sonner'
 import { Loader2, CheckCircle2, XCircle, Database } from 'lucide-react'
 

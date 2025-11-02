@@ -35,7 +35,7 @@ import {
   getForeignKeyOptionsAction,
   type ForeignKeyOption,
   type ForeignKeyOptionsData,
-} from '@/actions/data/foreign-key-actions'
+} from '@/app/actions/data/foreign-key-actions'
 
 interface ForeignKeySelectProps {
   projectId: string

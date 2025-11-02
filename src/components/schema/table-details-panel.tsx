@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { type TableSchemaInfo, type CompleteSchemaInfo, getTableMetadataAction, getTableConstraintsAction, getTableIndexesAction, getTableDependenciesAction, getTableDDLAction, type TableMetadata, type TableConstraint, type TableIndex, type TableDependency } from '@/actions/schema/schema-actions'
+import { type TableSchemaInfo, type CompleteSchemaInfo, getTableMetadataAction, getTableConstraintsAction, getTableIndexesAction, getTableDependenciesAction, getTableDDLAction, type TableMetadata, type TableConstraint, type TableIndex, type TableDependency } from '@/app/actions/schema/schema-actions'
 import {
   Card,
   CardContent,

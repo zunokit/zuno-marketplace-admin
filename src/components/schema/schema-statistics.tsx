@@ -8,7 +8,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Database, Table2, HardDrive, BarChart3 } from 'lucide-react'
-import type { DatabaseStatistics } from '@/actions/schema/schema-actions'
+import type { DatabaseStatistics } from '@/app/actions/schema/schema-actions'
 
 interface SchemaStatisticsProps {
   statistics: DatabaseStatistics

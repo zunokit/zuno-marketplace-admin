@@ -1,4 +1,4 @@
-import { getProjectByIdAction } from '@/actions/projects/project-actions'
+import { getProjectByIdAction } from '@/app/actions/projects/project-actions'
 import { ProjectForm } from '@/components/projects/project-form'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'

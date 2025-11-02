@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { deleteRecordAction } from '@/actions/data/table-actions'
+import { deleteRecordAction } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
