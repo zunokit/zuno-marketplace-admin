@@ -24,13 +24,14 @@ import {
   type ServerActionResponse,
 } from "@/lib/utils/api-response";
 import { logger } from "@/lib/utils/logger";
-import { encrypt, decrypt } from "@/lib/crypto/encryption";
+import { encrypt, decrypt } from "@/lib/crypto";
 import {
   createProjectSchema,
   updateProjectSchema,
   type CreateProjectInput,
   type UpdateProjectInput,
 } from "@/lib/validations/project";
+import { DATABASE_CONFIG, CACHE_TAGS, CACHE_REVALIDATION } from "@/lib/constants";
 
 /**
  * Get all projects (organizations)
@@ -53,7 +54,7 @@ export async function getAllProjectsAction(): Promise<ServerActionResponse> {
       // Don't return encrypted database URLs in list view
       return results.map((project) => ({
         ...project,
-        databaseUrl: project.databaseUrl ? "[ENCRYPTED]" : null,
+        databaseUrl: project.databaseUrl ? DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER : null,
       }));
     }, "getAllProjects");
 
@@ -166,13 +167,13 @@ export async function createProjectAction(
       // Don't return encrypted URL
       return {
         ...newProject,
-        databaseUrl: "[ENCRYPTED]",
+        databaseUrl: DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER,
       };
     }, "createProject");
 
-    revalidatePath("/dashboard/projects");
-    revalidatePath("/projects");
-    revalidateTag("project-registry", "default"); // Invalidate project registry cache
+    revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_LIST);
+    revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_INDEX);
+    revalidateTag(CACHE_TAGS.PROJECT_REGISTRY);
 
     return serverActionSuccess(project, "Project created successfully");
   } catch (error) {
@@ -252,13 +253,13 @@ export async function updateProjectAction(
 
       return {
         ...updated,
-        databaseUrl: updated.databaseUrl ? "[ENCRYPTED]" : null,
+        databaseUrl: updated.databaseUrl ? DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER : null,
       };
     }, "updateProject");
 
-    revalidatePath("/dashboard/projects");
+    revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_LIST);
     revalidatePath(`/projects/${validatedInput.id}`);
-    revalidateTag("project-registry", "default"); // Invalidate project registry cache
+    revalidateTag(CACHE_TAGS.PROJECT_REGISTRY);
 
     return serverActionSuccess(project, "Project updated successfully");
   } catch (error) {
@@ -302,14 +303,42 @@ export async function deleteProjectAction(
       });
     }, "deleteProject");
 
-    revalidatePath("/dashboard/projects");
-    revalidatePath("/projects");
-    revalidateTag("project-registry", "default"); // Invalidate project registry cache
+    revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_LIST);
+    revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_INDEX);
+    revalidateTag(CACHE_TAGS.PROJECT_REGISTRY);
 
     return serverActionSuccess(
       { deleted: true },
       "Project deleted successfully"
     );
+  } catch (error) {
+    return serverActionError(error);
+  }
+}
+
+/**
+ * Get projects registry (for client components)
+ * Returns projects in registry format: Record<string, ProjectConfig>
+ */
+export async function getProjectsRegistryAction(): Promise<ServerActionResponse> {
+  try {
+    const session = await requireAuth();
+
+    // Import ProjectRegistryService here to avoid bundling in client
+    const { ProjectRegistryService } = await import(
+      "@/lib/services/project-registry.service"
+    );
+
+    const registry = await errorHandler(async () => {
+      return await ProjectRegistryService.getProjectsRegistry();
+    }, "getProjectsRegistry");
+
+    logger.debug("Retrieved projects registry", {
+      projectCount: Object.keys(registry).length,
+      userId: session.user.id,
+    });
+
+    return serverActionSuccess(registry);
   } catch (error) {
     return serverActionError(error);
   }
@@ -332,7 +361,7 @@ export async function testProjectConnectionAction(
     }
 
     // Validate URL format
-    if (!databaseUrl.startsWith("postgresql://")) {
+    if (!databaseUrl.startsWith(DATABASE_CONFIG.PROTOCOL)) {
       throw new ValidationError("Invalid PostgreSQL connection string");
     }
 
@@ -342,9 +371,9 @@ export async function testProjectConnectionAction(
 
       // Try to connect with short timeout
       const sql = postgres(databaseUrl, {
-        max: 1,
-        connect_timeout: 5,
-        idle_timeout: 5,
+        max: DATABASE_CONFIG.TEST_CONNECTION.MAX_CONNECTIONS,
+        connect_timeout: DATABASE_CONFIG.TEST_CONNECTION.CONNECT_TIMEOUT,
+        idle_timeout: DATABASE_CONFIG.TEST_CONNECTION.IDLE_TIMEOUT,
       });
 
       try {

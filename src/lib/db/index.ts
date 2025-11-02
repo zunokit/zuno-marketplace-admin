@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schemas/auth.schema";
+import { DATABASE_CONFIG } from "@/lib/constants/database";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not defined in environment variables");
@@ -11,9 +12,9 @@ const connectionString = process.env.DATABASE_URL;
 
 // For serverless environments, use connection pooling
 const client = postgres(connectionString, {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
+  max: DATABASE_CONFIG.POOL.MAX_CONNECTIONS,
+  idle_timeout: DATABASE_CONFIG.POOL.IDLE_TIMEOUT,
+  connect_timeout: DATABASE_CONFIG.POOL.CONNECT_TIMEOUT,
 });
 
 // Create Drizzle instance

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { organization, projectEnvironment } from '@/lib/db/schemas/auth.schema'
-import { encrypt } from '@/lib/crypto/encryption'
+import { encrypt } from '@/lib/crypto'
 import { eq } from 'drizzle-orm'
 
 /**

@@ -18,8 +18,8 @@ import {
   ProjectEnvironmentQueryInput,
   ProjectAuditLogInput,
   AuditLogQueryInput,
-} from "@/lib/validations/project.validation";
-import { encrypt, decrypt, generateSecureId } from "@/lib/crypto/encryption";
+} from "@/lib/validations/project";
+import { encrypt, decrypt, generateSecureId } from "@/lib/crypto";
 
 /**
  * Project service class

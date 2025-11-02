@@ -1,91 +1,114 @@
-'use client'
+"use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import type { ProjectConfig } from '@/config/projects.config'
-import { getProjectsRegistry } from '@/config/projects.config'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import type { ProjectConfig } from "@/config/projects.config";
+import { getProjectsRegistryAction } from "@/app/actions/projects/project-actions";
+import { STORAGE_KEYS } from "@/lib/constants/storage";
+import { logger } from "@/lib/utils/logger";
 
 interface ProjectContextValue {
-  activeProject: ProjectConfig | null
-  setActiveProject: (projectId: string | null) => Promise<void>
-  projects: Record<string, ProjectConfig>
-  isLoading: boolean
-  error: string | null
-  refreshProjects: () => Promise<void>
+  activeProject: ProjectConfig | null;
+  setActiveProject: (projectId: string | null) => Promise<void>;
+  projects: Record<string, ProjectConfig>;
+  isLoading: boolean;
+  error: string | null;
+  refreshProjects: () => Promise<void>;
 }
 
-const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
-
-const ACTIVE_PROJECT_KEY = 'zuno-active-project'
+const ProjectContext = createContext<ProjectContextValue | undefined>(
+  undefined
+);
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
     // Initialize from localStorage
-    if (typeof window !== 'undefined') {
-      const savedProjectId = localStorage.getItem(ACTIVE_PROJECT_KEY)
-      return savedProjectId
+    if (typeof window !== "undefined") {
+      const savedProjectId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT);
+      return savedProjectId;
     }
-    return null
-  })
+    return null;
+  });
 
-  const [projects, setProjects] = useState<Record<string, ProjectConfig>>({})
-  const [activeProject, setActiveProject] = useState<ProjectConfig | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
+  const [activeProject, setActiveProject] = useState<ProjectConfig | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load projects from database
+  // Load projects from database using Server Action
   const loadProjects = useCallback(async () => {
     try {
-      setIsLoading(true)
-      setError(null)
-      const projectsRegistry = await getProjectsRegistry()
-      setProjects(projectsRegistry)
+      setIsLoading(true);
+      setError(null);
+
+      // Use Server Action instead of direct import to avoid bundling database code
+      const response = await getProjectsRegistryAction();
+
+      if (!response.success || !response.data) {
+        throw new Error("Failed to load projects");
+      }
+
+      const projectsRegistry = response.data as Record<string, ProjectConfig>;
+      setProjects(projectsRegistry);
 
       // Update active project if it exists
       if (activeProjectId && projectsRegistry[activeProjectId]) {
-        setActiveProject(projectsRegistry[activeProjectId])
+        setActiveProject(projectsRegistry[activeProjectId]);
       } else if (activeProjectId) {
         // Active project no longer exists, clear it
-        setActiveProjectId(null)
-        setActiveProject(null)
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(ACTIVE_PROJECT_KEY)
+        setActiveProjectId(null);
+        setActiveProject(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load projects')
-      console.error('Failed to load projects:', err)
+      const errorMessage = err instanceof Error ? err.message : "Failed to load projects";
+      setError(errorMessage);
+      logger.error("Failed to load projects registry", err, {
+        activeProjectId,
+        context: 'ProjectProvider.loadProjects',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [activeProjectId])
+  }, [activeProjectId]);
 
   // Load projects on mount
   useEffect(() => {
-    loadProjects()
-  }, [loadProjects])
+    loadProjects();
+  }, [loadProjects]);
 
   // Refresh projects function
   const refreshProjects = async () => {
-    await loadProjects()
-  }
+    await loadProjects();
+  };
 
   // Handle setting active project
   const handleSetActiveProject = async (projectId: string | null) => {
-    setActiveProjectId(projectId)
+    setActiveProjectId(projectId);
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       if (projectId) {
-        localStorage.setItem(ACTIVE_PROJECT_KEY, projectId)
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
         // Find and set the active project from current projects
         if (projects[projectId]) {
-          setActiveProject(projects[projectId])
+          setActiveProject(projects[projectId]);
         }
       } else {
-        localStorage.removeItem(ACTIVE_PROJECT_KEY)
-        setActiveProject(null)
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
+        setActiveProject(null);
       }
     }
-  }
+  };
 
   return (
     <ProjectContext.Provider
@@ -100,19 +123,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </ProjectContext.Provider>
-  )
+  );
 }
 
 export function useActiveProject() {
-  const context = useContext(ProjectContext)
+  const context = useContext(ProjectContext);
   if (!context) {
-    throw new Error('useActiveProject must be used within ProjectProvider')
+    throw new Error("useActiveProject must be used within ProjectProvider");
   }
-  return context
+  return context;
 }
 
 // Export additional hook for easier access to projects
 export function useProjects() {
-  const { projects, isLoading, error, refreshProjects } = useActiveProject()
-  return { projects, isLoading, error, refreshProjects }
+  const { projects, isLoading, error, refreshProjects } = useActiveProject();
+  return { projects, isLoading, error, refreshProjects };
 }

@@ -3,9 +3,10 @@ import postgres from "postgres";
 import { eq } from "drizzle-orm";
 import { db } from "./index";
 import { organization as organizationTable } from "./schemas/auth.schema";
-import { decrypt } from "@/lib/utils/encryption";
+import { decrypt } from "@/lib/crypto";
 import { logger } from "@/lib/utils/logger";
 import { errorHandler, NotFoundError } from "@/lib/utils/error-handler";
+import { DATABASE_CONFIG } from "@/lib/constants/database";
 
 // Cache for database connections (singleton pattern for serverless)
 const projectDbConnections = new Map<string, ReturnType<typeof drizzle>>();
@@ -80,9 +81,9 @@ export async function getProjectDb(projectId: string) {
 
   // Create new PostgreSQL client
   const connection = postgres(databaseUrl, {
-    max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
+    max: DATABASE_CONFIG.POOL.MAX_CONNECTIONS,
+    idle_timeout: DATABASE_CONFIG.POOL.IDLE_TIMEOUT,
+    connect_timeout: DATABASE_CONFIG.POOL.CONNECT_TIMEOUT,
     debug: process.env.NODE_ENV !== "production",
   });
 
