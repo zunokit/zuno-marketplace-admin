@@ -8,8 +8,10 @@ import { createProjectAction, updateProjectAction } from '@/app/actions/projects
 import {
   createProjectSchema,
   updateProjectSchema,
+  updateProjectFormSchema,
   type CreateProjectInput,
   type UpdateProjectInput,
+  type UpdateProjectFormInput,
 } from '@/lib/validations/project'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,9 +55,9 @@ export function ProjectForm(props: ProjectFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const form = useForm<CreateProjectInput | UpdateProjectInput>({
+  const form = useForm<CreateProjectInput | UpdateProjectFormInput>({
     resolver: zodResolver(
-      props.mode === 'create' ? createProjectSchema : updateProjectSchema
+      props.mode === 'create' ? createProjectSchema : updateProjectFormSchema
     ),
     defaultValues: props.mode === 'create'
       ? {
@@ -76,7 +78,7 @@ export function ProjectForm(props: ProjectFormProps) {
         },
   })
 
-  async function onSubmit(values: CreateProjectInput | UpdateProjectInput) {
+  async function onSubmit(values: CreateProjectInput | UpdateProjectFormInput) {
     setIsSubmitting(true)
 
     const result = props.mode === 'create'

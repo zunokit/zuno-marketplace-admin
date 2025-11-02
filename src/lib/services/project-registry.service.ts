@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { ProjectService } from "./project.service";
 import type { ProjectConfig } from "@/config/projects.config";
-import type { ProjectEnvironment } from "@/lib/db/schemas/auth.schema";
+import type { ProjectEnvironment } from "@/lib/infrastructure/database/schemas/auth.schema";
 
 /**
  * Dynamic Project Registry Service

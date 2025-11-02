@@ -157,6 +157,55 @@ export const updateProjectSchema = z.object({
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
 /**
+ * Project update form schema (without id for form)
+ */
+export const updateProjectFormSchema = z.object({
+  name: z
+    .string()
+    .min(VALIDATION_RULES.PROJECT.NAME.MIN_LENGTH)
+    .max(VALIDATION_RULES.PROJECT.NAME.MAX_LENGTH)
+    .regex(VALIDATION_RULES.PROJECT.NAME.PATTERN)
+    .optional(),
+
+  slug: z
+    .string()
+    .min(VALIDATION_RULES.PROJECT.SLUG.MIN_LENGTH)
+    .max(VALIDATION_RULES.PROJECT.SLUG.MAX_LENGTH)
+    .regex(VALIDATION_RULES.PROJECT.SLUG.PATTERN)
+    .optional(),
+
+  description: z
+    .string()
+    .min(VALIDATION_RULES.PROJECT.DESCRIPTION.MIN_LENGTH)
+    .max(VALIDATION_RULES.PROJECT.DESCRIPTION.MAX_LENGTH)
+    .optional()
+    .nullable(),
+
+  projectType: z
+    .string()
+    .min(VALIDATION_RULES.PROJECT.TYPE.MIN_LENGTH)
+    .max(VALIDATION_RULES.PROJECT.TYPE.MAX_LENGTH)
+    .optional(),
+
+  databaseUrl: z
+    .string()
+    .url()
+    .startsWith(DATABASE_CONFIG.PROTOCOL)
+    .optional(),
+
+  logo: z.string().url().optional().nullable(),
+
+  metadata: projectMetadataSchema.optional(),
+
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
+
+  icon: z.string().optional(),
+  color: z.string().optional(),
+});
+
+export type UpdateProjectFormInput = z.infer<typeof updateProjectFormSchema>;
+
+/**
  * Project environment schema
  */
 export const createProjectEnvironmentSchema = z.object({

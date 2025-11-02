@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq } from "drizzle-orm";
-import { db } from "./index";
-import { organization as organizationTable } from "./schemas/auth.schema";
+import { db } from "@/lib/db";
+import { organization as organizationTable } from "@/lib/infrastructure/database/schemas/auth.schema";
 import { decrypt } from "@/lib/crypto";
 import { logger } from "@/lib/utils/logger";
 import { errorHandler, NotFoundError } from "@/lib/utils/error-handler";

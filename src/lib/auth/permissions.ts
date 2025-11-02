@@ -1,7 +1,7 @@
 import { auth } from './config'
 import { db } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { member as memberTable } from '@/lib/db/schemas/auth.schema'
+import { member as memberTable } from '@/lib/infrastructure/database/schemas/auth.schema'
 import type { ProjectPermission, ProjectRole } from '@/types/projects'
 import { ROLE_PERMISSIONS } from '@/types/projects'
 

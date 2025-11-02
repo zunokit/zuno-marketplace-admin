@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schemas/auth.schema";
+import * as schema from "@/lib/infrastructure/database/schemas/auth.schema";
 import { DATABASE_CONFIG } from "@/lib/constants/database";
 
 if (!process.env.DATABASE_URL) {

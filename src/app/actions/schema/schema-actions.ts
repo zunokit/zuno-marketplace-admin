@@ -137,7 +137,6 @@ export async function getCompleteSchemaAction(
 
     return serverActionSuccess(result)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -167,7 +166,6 @@ export async function getTableMetadataAction(
 
     return serverActionSuccess(metadata)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -196,7 +194,6 @@ export async function getTableConstraintsAction(
 
     return serverActionSuccess(constraints)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -225,7 +222,6 @@ export async function getTableIndexesAction(
 
     return serverActionSuccess(indexes)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -254,7 +250,6 @@ export async function getTableDependenciesAction(
 
     return serverActionSuccess(dependencies)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -284,7 +279,6 @@ export async function getDatabaseStatisticsAction(
 
     return serverActionSuccess(statistics)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -363,7 +357,6 @@ export async function getTableDDLAction(
 
     return serverActionSuccess(ddl)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

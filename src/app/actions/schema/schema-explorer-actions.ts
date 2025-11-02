@@ -126,7 +126,6 @@ export async function getTableDetailsAction(
     return serverActionSuccess(tableDetails)
   } catch (error) {
     logger.error('Failed to fetch table details', { projectId, tableName, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -205,7 +204,7 @@ export async function getDatabaseStatisticsAction(
     return serverActionSuccess(databaseStatistics)
   } catch (error) {
     logger.error('Failed to fetch database statistics', { projectId, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
+    // Type-safe error handling
     return serverActionError(error)
   }
 }
@@ -252,7 +251,7 @@ export async function getTableMetadataAction(
     return serverActionSuccess(metadata)
   } catch (error) {
     logger.error('Failed to fetch table metadata', { projectId, tableName, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
+    // Type-safe error handling
     return serverActionError(error)
   }
 }
@@ -293,7 +292,6 @@ export async function getTableIndexesAction(
     return serverActionSuccess(indexes)
   } catch (error) {
     logger.error('Failed to fetch table indexes', { projectId, tableName, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -334,7 +332,7 @@ export async function getTableConstraintsAction(
     return serverActionSuccess(constraints)
   } catch (error) {
     logger.error('Failed to fetch table constraints', { projectId, tableName, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
+    // Type-safe error handling
     return serverActionError(error)
   }
 }
@@ -367,7 +365,7 @@ export async function generateTableDDLAction(
     return serverActionSuccess(ddlResult.data)
   } catch (error) {
     logger.error('Failed to generate table DDL', { projectId, tableName, error })
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
+    // Type-safe error handling
     return serverActionError(error)
   }
 }

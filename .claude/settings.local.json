@@ -15,7 +15,8 @@
       "Bash(pnpm drizzle-kit generate:*)",
       "Bash(pnpm list:*)",
       "Bash(pnpm tsx:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

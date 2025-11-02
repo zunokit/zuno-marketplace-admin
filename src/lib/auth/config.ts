@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { organization, admin } from 'better-auth/plugins'
 import { db } from '@/lib/db'
-import * as schema from '@/lib/db/schemas/auth.schema'
+import * as schema from '@/lib/infrastructure/database/schemas/auth.schema'
 
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error('BETTER_AUTH_SECRET is not defined')

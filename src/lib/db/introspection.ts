@@ -4,7 +4,7 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { getProjectDb } from './connections'
+import { getProjectDb } from '@/lib/infrastructure/database/connections/project-connections'
 import { errorHandler } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
 

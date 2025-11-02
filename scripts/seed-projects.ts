@@ -19,7 +19,7 @@ import {
   type NewProjectEnvironment,
   type NewProjectFeature,
   type NewProjectConfiguration,
-} from "@/lib/db/schemas/auth.schema";
+} from "@/lib/infrastructure/database/schemas/auth.schema";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });

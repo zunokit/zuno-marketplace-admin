@@ -110,6 +110,24 @@ export type ServerActionResponse<T = unknown> =
   | { success: false; error: string; errors?: Array<{ message: string; field?: string }> }
 
 /**
+ * Type guard to check if response is successful
+ */
+export function isSuccessResponse<T>(
+  response: ServerActionResponse<T>
+): response is { success: true; data: T; message?: string } {
+  return response.success === true;
+}
+
+/**
+ * Type guard to check if response is an error
+ */
+export function isErrorResponse<T>(
+  response: ServerActionResponse<T>
+): response is { success: false; error: string } {
+  return response.success === false;
+}
+
+/**
  * Success response for Server Actions
  */
 export function serverActionSuccess<T>(data: T, message?: string): ServerActionResponse<T> {
@@ -119,10 +137,10 @@ export function serverActionSuccess<T>(data: T, message?: string): ServerActionR
 /**
  * Error response for Server Actions
  */
-export function serverActionError(
+export function serverActionError<T = never>(
   error: unknown,
   errors?: Array<{ message: string; field?: string }>
-): ServerActionResponse {
+): ServerActionResponse<T> {
   const sanitized = sanitizeError(error)
   return {
     success: false,

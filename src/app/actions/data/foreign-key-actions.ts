@@ -6,7 +6,7 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { getProjectDb } from '@/lib/db/connections'
+import { getProjectDb } from '@/lib/infrastructure/database/connections/project-connections'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { errorHandler, ValidationError } from '@/lib/utils/error-handler'
@@ -294,7 +294,6 @@ export async function getForeignKeyOptionsAction(
 
     return serverActionSuccess(result)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

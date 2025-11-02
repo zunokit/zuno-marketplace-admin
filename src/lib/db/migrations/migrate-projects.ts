@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
-import { organization, projectEnvironment } from '@/lib/db/schemas/auth.schema'
+import { organization, projectEnvironment } from '@/lib/infrastructure/database/schemas/auth.schema'
 import { encrypt } from '@/lib/crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 /**
  * Migration script to populate initial projects from hardcoded PROJECTS_REGISTRY
@@ -185,8 +185,8 @@ async function migrateProjects() {
     console.log('\n✅ Migration completed successfully!')
 
     // Summary
-    const [projectCount] = await db.select({ count: 'count' }).from(organization)
-    const [environmentCount] = await db.select({ count: 'count' }).from(projectEnvironment)
+    const [projectCount] = await db.select({ count: sql`count(*)` }).from(organization)
+    const [environmentCount] = await db.select({ count: sql`count(*)` }).from(projectEnvironment)
 
     console.log(`\n📊 Migration Summary:`)
     console.log(`  - Total projects: ${projectCount.count}`)

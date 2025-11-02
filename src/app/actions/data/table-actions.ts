@@ -7,7 +7,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { sql } from 'drizzle-orm'
-import { getProjectDb } from '@/lib/db/connections'
+import { getProjectDb } from '@/lib/infrastructure/database/connections/project-connections'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { errorHandler, ValidationError } from '@/lib/utils/error-handler'
@@ -33,7 +33,6 @@ export async function getTablesAction(
 
     return serverActionSuccess(tables)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -53,7 +52,6 @@ export async function getTableSchemaAction(
 
     return serverActionSuccess(schema)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -81,7 +79,6 @@ export async function getTableDataAction(
 
     return serverActionSuccess(data)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -149,7 +146,6 @@ export async function createRecordAction(
 
     return serverActionSuccess(result, 'Record created successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -244,7 +240,6 @@ export async function updateRecordAction(
 
     return serverActionSuccess(result, 'Record updated successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -303,7 +298,6 @@ export async function deleteRecordAction(
 
     return serverActionSuccess({ deleted: true }, 'Record deleted successfully')
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -364,7 +358,6 @@ export async function bulkDeleteRecordsAction(
 
     return serverActionSuccess({ deleted: deletedCount }, `${deletedCount} records deleted successfully`)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }

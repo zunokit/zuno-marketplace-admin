@@ -6,7 +6,7 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { getProjectDb } from '@/lib/db/connections'
+import { getProjectDb } from '@/lib/infrastructure/database/connections/project-connections'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { errorHandler, ValidationError } from '@/lib/utils/error-handler'
@@ -121,7 +121,6 @@ export async function executeQueryAction(
 
     return serverActionSuccess(result)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -141,7 +140,6 @@ export async function getQueryHistoryAction(
     // Future: Could store in database with user_id + project_id
     return serverActionSuccess([])
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
@@ -186,7 +184,6 @@ export async function saveQueryAction(
 
     return serverActionSuccess(savedQuery)
   } catch (error) {
-    // @ts-expect-error - TODO: Fix ServerActionResponse generic type inference
     return serverActionError(error)
   }
 }
