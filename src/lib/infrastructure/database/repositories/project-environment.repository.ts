@@ -1,6 +1,6 @@
 import { eq, and, desc, ilike, count as drizzleCount } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projectEnvironment } from "@/lib/infrastructure/database/schemas/auth.schema";
+import { projectEnvironment } from "@/lib/infrastructure/database/schemas";
 import type {
   IProjectEnvironmentRepository,
   ProjectEnvironmentFilters,

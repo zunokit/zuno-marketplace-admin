@@ -1,6 +1,6 @@
 import { eq, and, desc, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projectAuditLog } from "@/lib/infrastructure/database/schemas/auth.schema";
+import { projectAuditLog } from "@/lib/infrastructure/database/schemas";
 import { logger } from "@/lib/utils/logger";
 import type {
   IProjectAuditLogRepository,

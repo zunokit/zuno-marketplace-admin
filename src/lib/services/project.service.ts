@@ -8,7 +8,7 @@ import {
   type NewOrganization,
   type NewProjectEnvironment,
   type NewProjectAuditLog,
-} from "@/lib/infrastructure/database/schemas/auth.schema";
+} from "@/lib/infrastructure/database/schemas";
 import {
   CreateProjectInput,
   UpdateProjectInput,

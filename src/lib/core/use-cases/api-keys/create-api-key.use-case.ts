@@ -4,7 +4,7 @@ import type { IProjectRepository } from "@/lib/core/domain/interfaces/project.re
 import type { IApiKeyRepository } from "@/lib/core/domain/interfaces/api-key.repository.interface";
 import type { IEncryptionService } from "@/lib/core/domain/interfaces/encryption.service.interface";
 import type { ApiKeyService } from "@/lib/core/services/api-key.service";
-import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas/auth.schema";
+import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas";
 
 export interface CreateApiKeyInput {
   organizationId: string;

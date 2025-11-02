@@ -9,7 +9,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as dotenv from "dotenv";
 import { nanoid } from "nanoid";
-
+import { eq } from "drizzle-orm";
 import {
   organization,
   projectEnvironment,
@@ -19,15 +19,26 @@ import {
   type NewProjectEnvironment,
   type NewProjectFeature,
   type NewProjectConfiguration,
-} from "@/lib/infrastructure/database/schemas/auth.schema";
+} from "../src/lib/infrastructure/database/schemas";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
 
 // Database connection
 const connectionString = process.env.DATABASE_URL!;
+if (!connectionString) {
+  throw new Error("DATABASE_URL environment variable is required");
+}
+
 const client = postgres(connectionString);
-const db = drizzle(client);
+const db = drizzle(client, {
+  schema: {
+    organization,
+    projectEnvironment,
+    projectFeature,
+    projectConfiguration,
+  },
+});
 
 /**
  * Hardcoded projects from the old PROJECTS_REGISTRY
@@ -35,26 +46,26 @@ const db = drizzle(client);
  */
 const LEGACY_PROJECTS = [
   {
-    id: 'abis',
-    name: '@zuno-marketplace-abis',
-    slug: 'zuno-abis',
+    id: "abis",
+    name: "@zuno-marketplace-abis",
+    slug: "zuno-abis",
     databaseUrl: process.env.ABIS_DATABASE_URL,
-    description: 'Zuno Marketplace ABIs - Smart contract ABI management',
-    icon: '📋',
-    color: '#3b82f6',
-    features: ['ABI Management', 'Contract Registry', 'Version Control'],
-    projectType: 'abis',
+    description: "Zuno Marketplace ABIs - Smart contract ABI management",
+    icon: "📋",
+    color: "#3b82f6",
+    features: ["ABI Management", "Contract Registry", "Version Control"],
+    projectType: "abis",
   },
   {
-    id: 'metadata',
-    name: '@zuno-marketplace-metadata',
-    slug: 'zuno-metadata',
+    id: "metadata",
+    name: "@zuno-marketplace-metadata",
+    slug: "zuno-metadata",
     databaseUrl: process.env.METADATA_DATABASE_URL,
-    description: 'Zuno Marketplace Metadata - NFT and token metadata service',
-    icon: '🏷️',
-    color: '#8b5cf6',
-    features: ['Metadata Storage', 'IPFS Integration', 'Token Standards'],
-    projectType: 'metadata',
+    description: "Zuno Marketplace Metadata - NFT and token metadata service",
+    icon: "🏷️",
+    color: "#8b5cf6",
+    features: ["Metadata Storage", "IPFS Integration", "Token Standards"],
+    projectType: "metadata",
   },
 ] as const;
 
@@ -68,10 +79,10 @@ function createDefaultEnvironment(
   return {
     id: nanoid(),
     organizationId: projectId,
-    name: 'production',
-    slug: 'prod',
-    databaseUrl: databaseUrl || '',
-    description: 'Production environment',
+    name: "production",
+    slug: "prod",
+    databaseUrl: databaseUrl || "",
+    description: "Production environment",
     isActive: true,
   };
 }
@@ -84,29 +95,30 @@ function createProjectFeatures(
   features: string[]
 ): NewProjectFeature[] {
   const featureMap: Record<string, { name: string; description: string }> = {
-    'ABI Management': {
-      name: 'ABI Management',
-      description: 'Smart contract ABI management and versioning',
+    "ABI Management": {
+      name: "ABI Management",
+      description: "Smart contract ABI management and versioning",
     },
-    'Contract Registry': {
-      name: 'Contract Registry',
-      description: 'Registry of smart contracts with metadata',
+    "Contract Registry": {
+      name: "Contract Registry",
+      description: "Registry of smart contracts with metadata",
     },
-    'Version Control': {
-      name: 'Version Control',
-      description: 'Version control for contract artifacts',
+    "Version Control": {
+      name: "Version Control",
+      description: "Version control for contract artifacts",
     },
-    'Metadata Storage': {
-      name: 'Metadata Storage',
-      description: 'NFT and token metadata storage',
+    "Metadata Storage": {
+      name: "Metadata Storage",
+      description: "NFT and token metadata storage",
     },
-    'IPFS Integration': {
-      name: 'IPFS Integration',
-      description: 'IPFS integration for decentralized storage',
+    "IPFS Integration": {
+      name: "IPFS Integration",
+      description: "IPFS integration for decentralized storage",
     },
-    'Token Standards': {
-      name: 'Token Standards',
-      description: 'Support for various token standards (ERC-721, ERC-1155, etc.)',
+    "Token Standards": {
+      name: "Token Standards",
+      description:
+        "Support for various token standards (ERC-721, ERC-1155, etc.)",
     },
   };
 
@@ -119,7 +131,7 @@ function createProjectFeatures(
       id: nanoid(),
       organizationId: projectId,
       name: featureData.name,
-      key: feature.toLowerCase().replace(/\s+/g, '_'),
+      key: feature.toLowerCase().replace(/\s+/g, "_"),
       description: featureData.description,
       isEnabled: true,
       configuration: {},
@@ -139,37 +151,37 @@ function createProjectConfigurations(
     {
       id: nanoid(),
       organizationId: projectId,
-      key: 'theme',
+      key: "theme",
       value: {
         icon,
         color,
         primaryColor: color,
       },
-      description: 'Project theme configuration',
+      description: "Project theme configuration",
       isEncrypted: false,
     },
     {
       id: nanoid(),
       organizationId: projectId,
-      key: 'settings',
+      key: "settings",
       value: {
-        timezone: 'UTC',
-        language: 'en',
-        dateFormat: 'YYYY-MM-DD',
+        timezone: "UTC",
+        language: "en",
+        dateFormat: "YYYY-MM-DD",
       },
-      description: 'Project general settings',
+      description: "Project general settings",
       isEncrypted: false,
     },
     {
       id: nanoid(),
       organizationId: projectId,
-      key: 'integrations',
+      key: "integrations",
       value: {
         webhooks: [],
         apiKeys: [],
         externalServices: [],
       },
-      description: 'Third-party integrations configuration',
+      description: "Third-party integrations configuration",
       isEncrypted: true,
     },
   ];
@@ -179,7 +191,9 @@ function createProjectConfigurations(
  * Main seeding function
  */
 async function seedProjects() {
-  console.log("🚀 Starting project migration from hardcoded registry to database...");
+  console.log(
+    "🚀 Starting project migration from hardcoded registry to database..."
+  );
 
   try {
     for (const project of LEGACY_PROJECTS) {
@@ -189,7 +203,7 @@ async function seedProjects() {
       const existingProject = await db
         .select()
         .from(organization)
-        .where(org => org.id === project.id)
+        .where(eq(organization.id, project.id))
         .limit(1);
 
       if (existingProject.length > 0) {
@@ -216,7 +230,7 @@ async function seedProjects() {
         projectType: project.projectType,
         databaseUrl: project.databaseUrl,
         description: project.description,
-        status: 'active',
+        status: "active",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -230,13 +244,16 @@ async function seedProjects() {
 
       // Create default environment if database URL is available
       if (project.databaseUrl) {
-        const defaultEnv = createDefaultEnvironment(project.id, project.databaseUrl);
+        const defaultEnv = createDefaultEnvironment(
+          project.id,
+          project.databaseUrl
+        );
         await db.insert(projectEnvironment).values(defaultEnv);
         console.log(`✅ Created default production environment`);
       }
 
       // Create project features
-      const features = createProjectFeatures(project.id, project.features);
+      const features = createProjectFeatures(project.id, [...project.features]);
       if (features.length > 0) {
         await db.insert(projectFeature).values(features);
         console.log(`✅ Created ${features.length} project features`);
@@ -250,18 +267,25 @@ async function seedProjects() {
       );
       if (configurations.length > 0) {
         await db.insert(projectConfiguration).values(configurations);
-        console.log(`✅ Created ${configurations.length} project configurations`);
+        console.log(
+          `✅ Created ${configurations.length} project configurations`
+        );
       }
     }
 
     console.log("\n🎉 Project migration completed successfully!");
     console.log("\n📋 Migration Summary:");
     console.log(`- Projects migrated: ${LEGACY_PROJECTS.length}`);
-    console.log("- Features: ABI Management, Contract Registry, Version Control");
-    console.log("- Features: Metadata Storage, IPFS Integration, Token Standards");
-    console.log("- Default environments created for projects with database URLs");
+    console.log(
+      "- Features: ABI Management, Contract Registry, Version Control"
+    );
+    console.log(
+      "- Features: Metadata Storage, IPFS Integration, Token Standards"
+    );
+    console.log(
+      "- Default environments created for projects with database URLs"
+    );
     console.log("- Theme and settings configurations applied");
-
   } catch (error) {
     console.error("❌ Error during project migration:", error);
     process.exit(1);

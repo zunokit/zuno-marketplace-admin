@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth/config'
 import { logger } from '@/lib/utils/logger'
 import { db } from '@/lib/db'
-import { user } from '@/lib/infrastructure/database/schemas/auth.schema'
+import { user } from '@/lib/infrastructure/database/schemas'
 import { eq } from 'drizzle-orm'
 
 interface SignUpData {

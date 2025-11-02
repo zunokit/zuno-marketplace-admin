@@ -1,20 +1,20 @@
-import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { organization, admin } from 'better-auth/plugins'
-import { db } from '@/lib/db'
-import * as schema from '@/lib/infrastructure/database/schemas/auth.schema'
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization, admin } from "better-auth/plugins";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/infrastructure/database/schemas";
 
 if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error('BETTER_AUTH_SECRET is not defined')
+  throw new Error("BETTER_AUTH_SECRET is not defined");
 }
 
 if (!process.env.BETTER_AUTH_URL) {
-  throw new Error('BETTER_AUTH_URL is not defined')
+  throw new Error("BETTER_AUTH_URL is not defined");
 }
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: 'pg',
+    provider: "pg",
     schema: {
       user: schema.user,
       session: schema.session,
@@ -27,7 +27,7 @@ export const auth = betterAuth({
   }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
-  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',') || [],
+  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",") || [],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to true in production
@@ -44,18 +44,18 @@ export const auth = betterAuth({
       // Projects are represented as organizations in better-auth
       allowUserToCreateOrganization: async (user) => {
         // Only super admins can create projects
-        return user.role?.includes('super_admin') || false
+        return user.role?.includes("super_admin") || false;
       },
       // Send invitation email (you can customize this)
       async sendInvitationEmail(data) {
-        console.log('Invitation email:', data)
+        console.log("Invitation email:", data);
         // TODO: Implement email sending (e.g., with Resend, SendGrid, etc.)
         // For now, just log the invitation
       },
     }),
     admin({
       // Global admin plugin for user management
-      defaultRole: 'user',
+      defaultRole: "user",
       // Impersonation session duration (1 hour)
       impersonationSessionDuration: 60 * 60,
       // Access control for admin operations
@@ -63,20 +63,20 @@ export const auth = betterAuth({
         // Super admin has full access
         super_admin: {
           permissions: {
-            project: ['create', 'delete', 'update', 'read'],
-            user: ['create', 'delete', 'update', 'read', 'impersonate'],
-            system: ['*'],
+            project: ["create", "delete", "update", "read"],
+            user: ["create", "delete", "update", "read", "impersonate"],
+            system: ["*"],
           },
         },
         // Regular users can only read projects they're members of
         user: {
           permissions: {
-            project: ['read'],
+            project: ["read"],
           },
         },
       },
     }),
   ],
-})
+});
 
-export type Auth = typeof auth
+export type Auth = typeof auth;

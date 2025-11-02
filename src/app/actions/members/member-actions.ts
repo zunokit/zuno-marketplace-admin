@@ -13,7 +13,7 @@ import {
   member as memberTable,
   invitation as invitationTable,
   user as userTable,
-} from '@/lib/infrastructure/database/schemas/auth.schema'
+} from '@/lib/infrastructure/database/schemas'
 import { requireAuth } from '@/lib/auth/middleware'
 import { errorHandler, ForbiddenError, NotFoundError, ValidationError } from '@/lib/utils/error-handler'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'

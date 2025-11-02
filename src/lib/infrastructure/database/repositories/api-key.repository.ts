@@ -1,6 +1,6 @@
 import { eq, and, desc, count as drizzleCount, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projectApiKey } from "@/lib/infrastructure/database/schemas/auth.schema";
+import { projectApiKey } from "@/lib/infrastructure/database/schemas";
 import type {
   IApiKeyRepository,
   ApiKeyFilters,
@@ -9,7 +9,7 @@ import type {
   UpdateApiKeyData,
   RevokeApiKeyData,
 } from "@/lib/core/domain/interfaces/api-key.repository.interface";
-import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas/auth.schema";
+import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas";
 
 export class ApiKeyRepository implements IApiKeyRepository {
   async findById(id: string): Promise<ProjectApiKey | null> {

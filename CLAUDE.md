@@ -135,20 +135,34 @@ pnpm typecheck
 
 ## Project Context
 
-This is an admin dashboard project for a marketplace platform. The current implementation is a starter template that needs to be built out with:
+**Zuno Marketplace Admin** is a **multi-project admin dashboard** for managing multiple marketplace products from a single unified interface.
 
-- Authentication and authorization
-- Admin-specific UI components
-- Data management interfaces
-- API integrations
+### Key Features:
 
-When building features, consider:
+- **Multi-Project Architecture**: Each project is a Better-Auth organization with its own database
+- **Role-Based Access Control (RBAC)**: Global roles (`super_admin`, `user`) + Project roles (`owner`, `admin`, `editor`, `viewer`)
+- **Multi-Database Support**: Each project connects to its own PostgreSQL database
+- **Better-Auth Integration**: Authentication with organization and admin plugins
+- **Drizzle ORM**: Database queries with multi-database support via `getProjectDb(projectId)`
+- **Row Level Security (RLS)**: Database-level security for multi-tenant isolation
 
-- Admin users need different permissions than regular users
-- Data tables and forms will be common UI patterns
-- Use shadcn/ui components for consistent design
-- Implement proper error handling and loading states
-- Follow Next.js best practices for data fetching and caching
+### Current Routes (src/app/(dashboard)):
+
+- `/dashboard` - Overview with project stats
+- `/projects` - Project management (CRUD)
+- `/members` - Team members and invitations per project
+- `/data` - Data browser for project tables
+- `/schema` - Schema visualization (ER diagram)
+- `/schema/explorer` - Detailed schema explorer
+- `/query` - SQL query runner
+
+### Key Patterns:
+
+- **Projects = Organizations**: Each project is stored in `organization` table in Better-Auth
+- **Dynamic Project Registry**: Projects loaded from database via `ProjectRegistryService`, not hardcoded
+- **Project Context**: Use `useActiveProject()` hook to get current project
+- **Database Connections**: Use `getProjectDb(projectId)` for project-specific queries
+- **Permissions**: Use `checkProjectPermission()` before project operations
 
 ## Development Standards
 
@@ -187,14 +201,21 @@ When building features, consider:
    - Fix all linting errors automatically
    - Code must be lint-free before completion
 
-4. **ALWAYS Commit Automatically When Complete:**
+4. **ALWAYS Run Build Before Reporting Completion:**
 
-   - After completing a feature (passing type check + lint), automatically commit the changes
+   - MANDATORY: Run `pnpm build` before reporting any task as complete
+   - Build must succeed with zero errors
+   - This ensures the code compiles correctly for production
+   - Fix any build errors immediately - don't report completion with build errors
+
+5. **ALWAYS Commit Automatically When Complete:**
+
+   - After completing a feature (passing type check + lint + build), automatically commit the changes
    - Use conventional commit format (see Git & Version Control section)
    - Commit message must describe the complete feature, not just partial work
    - Don't leave uncommitted changes after completing a task
 
-5. **No Partial Completion Reports:**
+6. **No Partial Completion Reports:**
    - NEVER say "done" or "ok" after completing just one small part
    - Only report completion when the ENTIRE feature is implemented and verified
    - Continue working autonomously until everything related is complete
@@ -246,6 +267,7 @@ When building features, consider:
      - All edge cases are covered
      - Type check passes
      - Lint passes
+     - Build passes
      - Code is committed
      - Feature is production-ready
 
@@ -278,6 +300,7 @@ AI Should:
    - Handle permissions
    - Run typecheck
    - Run lint
+   - Run build
    - Commit
 
 3. Report: "User management feature complete with all CRUD operations, search, pagination, and permissions"
@@ -293,8 +316,9 @@ NOT: "I've created a basic user table. What would you like to add next?"
 3. Add validations and error handling
 4. Run `pnpm typecheck` → Fix any errors
 5. Run `pnpm lint` → Fix any issues
-6. Commit with proper message
-7. Report completion (only then!)
+6. Run `pnpm build` → Fix any build errors
+7. Commit with proper message
+8. Report completion (only then!)
 ```
 
 **❌ WRONG:**
@@ -311,8 +335,9 @@ NOT: "I've created a basic user table. What would you like to add next?"
 1. Implement feature completely (all parts)
 2. Run typecheck → fix errors
 3. Run lint → fix issues
-4. Commit automatically
-5. Report: "Feature X is complete with all related functionality"
+4. Run build → fix build errors
+5. Commit automatically
+6. Report: "Feature X is complete with all related functionality"
 ```
 
 ### Code Architecture & Structure
@@ -416,8 +441,9 @@ logger.info('message')
 **Pre-commit Checklist (MANDATORY):**
 
 - Always review code before committing
-- **MANDATORY**: Run `pnpm lint` and fix all errors
 - **MANDATORY**: Run `pnpm typecheck` and fix all errors
+- **MANDATORY**: Run `pnpm lint` and fix all errors
+- **MANDATORY**: Run `pnpm build` and fix all build errors
 - No `console.log` (use logger)
 - Tests must pass (if applicable)
 - **AUTOMATIC COMMIT**: After completing a feature, automatically commit (don't wait for user approval)

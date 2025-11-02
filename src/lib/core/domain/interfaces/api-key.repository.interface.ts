@@ -1,4 +1,4 @@
-import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas/auth.schema";
+import type { ProjectApiKey } from "@/lib/infrastructure/database/schemas";
 
 export interface ApiKeyFilters {
   organizationId: string;

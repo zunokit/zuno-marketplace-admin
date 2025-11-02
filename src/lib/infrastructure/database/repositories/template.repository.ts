@@ -8,7 +8,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projectTemplate } from "@/lib/infrastructure/database/schemas/auth.schema";
+import { projectTemplate } from "@/lib/infrastructure/database/schemas";
 import type {
   ITemplateRepository,
   TemplateFilters,
@@ -16,7 +16,7 @@ import type {
   CreateTemplateData,
   UpdateTemplateData,
 } from "@/lib/core/domain/interfaces/template.repository.interface";
-import type { ProjectTemplate } from "@/lib/infrastructure/database/schemas/auth.schema";
+import type { ProjectTemplate } from "@/lib/infrastructure/database/schemas";
 
 export class TemplateRepository implements ITemplateRepository {
   async findById(id: string): Promise<ProjectTemplate | null> {

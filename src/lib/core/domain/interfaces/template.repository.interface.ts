@@ -1,4 +1,4 @@
-import type { ProjectTemplate } from "@/lib/infrastructure/database/schemas/auth.schema";
+import type { ProjectTemplate } from "@/lib/infrastructure/database/schemas";
 
 export interface TemplateFilters {
   category?: string;
