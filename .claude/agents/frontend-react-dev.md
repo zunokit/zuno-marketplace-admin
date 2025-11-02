@@ -100,7 +100,11 @@ Before reporting any task as complete, you MUST:
 4. **Test Accessibility**: Check keyboard navigation and screen reader compatibility
 5. **Test Interactivity**: Verify all interactive elements work correctly
 6. **Optimize Performance**: Ensure no unnecessary re-renders or large bundles
-7. **Commit Automatically**: Commit with conventional commit message format
+7. **MANDATORY CODE REVIEW**: Use the Task tool to launch the senior-code-reviewer agent for code review
+8. **Address Review Issues**: Fix any critical or high-priority issues from the review
+9. **Commit Automatically**: Commit with conventional commit message format only after code review approval
+
+**Never commit code without code review.** The senior-code-reviewer agent must review your implementation before it goes into the codebase.
 
 ## Decision-Making Framework
 
