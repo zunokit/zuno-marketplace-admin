@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ProjectRegistryService } from '@/lib/services/project-registry.service'
 
 /**
  * Project Configuration Schema
@@ -8,84 +9,43 @@ export const ProjectConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
-  databaseUrl: z.string().optional(),
-  description: z.string().optional(),
+  databaseUrl: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   metadata: z
     .object({
-      icon: z.string().optional(),
-      color: z.string().optional(),
+      icon: z.string().nullable().optional(),
+      color: z.string().nullable().optional(),
       features: z.array(z.string()).optional(),
+      projectType: z.string().optional(),
     })
+    .nullable()
     .optional(),
 })
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>
 
 /**
- * Central Project Registry
- * This is the single source of truth for all projects in the system
- * Each project represents an organization in better-auth
+ * Dynamic Project Registry
+ * All project data is now loaded from the database via ProjectRegistryService
+ * This provides full dynamic project management capabilities
  */
-export const PROJECTS_REGISTRY = {
-  abis: {
-    id: 'abis',
-    name: '@zuno-marketplace-abis',
-    slug: 'zuno-abis',
-    databaseUrl: process.env.ABIS_DATABASE_URL,
-    description: 'Zuno Marketplace ABIs - Smart contract ABI management',
-    metadata: {
-      icon: '📋',
-      color: '#3b82f6',
-      features: ['ABI Management', 'Contract Registry', 'Version Control'],
-    },
-  },
-  metadata: {
-    id: 'metadata',
-    name: '@zuno-marketplace-metadata',
-    slug: 'zuno-metadata',
-    databaseUrl: process.env.METADATA_DATABASE_URL,
-    description: 'Zuno Marketplace Metadata - NFT and token metadata service',
-    metadata: {
-      icon: '🏷️',
-      color: '#8b5cf6',
-      features: ['Metadata Storage', 'IPFS Integration', 'Token Standards'],
-    },
-  },
-} as const satisfies Record<string, ProjectConfig>
 
 /**
- * Project IDs type for type safety
+ * Legacy hardcoded registry - REMOVED for full dynamic implementation
+ * All projects are now managed through the database and ProjectRegistryService
  */
-export type ProjectId = keyof typeof PROJECTS_REGISTRY
 
-/**
- * Get project configuration by ID
- */
-export function getProjectConfig(projectId: ProjectId): ProjectConfig {
-  const config = PROJECTS_REGISTRY[projectId]
-  if (!config) {
-    throw new Error(`Project configuration not found: ${projectId}`)
-  }
-  return config
-}
+// Re-export dynamic functions from ProjectRegistryService for easier access
+export const getProjectConfig = ProjectRegistryService.getProjectConfig.bind(ProjectRegistryService)
+export const getAllProjects = ProjectRegistryService.getAllProjects.bind(ProjectRegistryService)
+export const isValidProjectId = ProjectRegistryService.isValidProjectId.bind(ProjectRegistryService)
+export const getProjectBySlug = ProjectRegistryService.getProjectBySlug.bind(ProjectRegistryService)
+export const getProjectsRegistry = ProjectRegistryService.getProjectsRegistry.bind(ProjectRegistryService)
+export const getProjectDatabaseUrl = ProjectRegistryService.getProjectDatabaseUrl.bind(ProjectRegistryService)
+export const getProjectDatabaseUrlById = ProjectRegistryService.getProjectDatabaseUrlById.bind(ProjectRegistryService)
 
-/**
- * Get all projects as an array
- */
-export function getAllProjects(): ProjectConfig[] {
-  return Object.values(PROJECTS_REGISTRY)
-}
-
-/**
- * Check if a project ID exists
- */
-export function isValidProjectId(projectId: string): projectId is ProjectId {
-  return projectId in PROJECTS_REGISTRY
-}
-
-/**
- * Get project by slug
- */
-export function getProjectBySlug(slug: string): ProjectConfig | undefined {
-  return Object.values(PROJECTS_REGISTRY).find((project) => project.slug === slug)
-}
+// Export additional service functions
+export const getProjectTypeMapping = ProjectRegistryService.getProjectTypeMapping.bind(ProjectRegistryService)
+export const getProjectsByType = ProjectRegistryService.getProjectsByType.bind(ProjectRegistryService)
+export const validateProjectAccess = ProjectRegistryService.validateProjectAccess.bind(ProjectRegistryService)
+export const getProjectCountByType = ProjectRegistryService.getProjectCountByType.bind(ProjectRegistryService)

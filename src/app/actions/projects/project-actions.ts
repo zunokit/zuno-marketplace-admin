@@ -15,7 +15,7 @@ import { isSuperAdmin } from '@/lib/auth/permissions'
 import { errorHandler, ForbiddenError, ValidationError, NotFoundError } from '@/lib/utils/error-handler'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
 import { logger } from '@/lib/utils/logger'
-import { encrypt, decrypt } from '@/lib/utils/encryption'
+import { encrypt, decrypt } from '@/lib/crypto/encryption'
 import { createProjectSchema, updateProjectSchema, type CreateProjectInput, type UpdateProjectInput } from '@/lib/validations/project'
 
 /**

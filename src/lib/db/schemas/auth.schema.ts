@@ -114,6 +114,10 @@ export const organization = pgTable(
     metadataJson: jsonb("metadata_json"), // Custom field for structured metadata
     projectType: text("project_type"), // 'abis', 'metadata', etc. (optional)
     databaseUrl: text("database_url"), // Encrypted database connection string (optional)
+    description: text("description"), // Project description
+    status: text("status").default("active").notNull(), // active, inactive, archived
+    icon: text("icon"), // Project icon/emoji
+    color: text("color"), // Project theme color
   }
 ); // .enableRLS() - TEMPORARY: Disabled to allow db:push
 
@@ -156,6 +160,97 @@ export const invitation = pgTable(
   }
 ); // .enableRLS() - TEMPORARY: Disabled to allow db:push
 
+// Project environments table (for different deployment environments)
+export const projectEnvironment = pgTable(
+  "project_environment",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // development, staging, production
+    slug: text("slug").notNull(), // dev, staging, prod
+    databaseUrl: text("database_url").notNull(), // Encrypted database URL for this environment
+    description: text("description"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  }
+); // .enableRLS() - TEMPORARY: Disabled to allow db:push
+
+// Project features table (for dynamic feature flags)
+export const projectFeature = pgTable(
+  "project_feature",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // Feature name: analytics, multi_tenancy, custom_domains, etc.
+    key: text("key").notNull(), // Feature key for programmatic access
+    description: text("description"),
+    isEnabled: boolean("is_enabled").default(false).notNull(),
+    configuration: jsonb("configuration"), // Feature-specific configuration
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => ({
+    orgFeatureUnique: { unique: true, columns: [table.organizationId, table.key] },
+  })
+); // .enableRLS() - TEMPORARY: Disabled to allow db:push
+
+// Project configuration table (extensible config storage)
+export const projectConfiguration = pgTable(
+  "project_configuration",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    key: text("key").notNull(), // Configuration key: theme, integrations, settings, etc.
+    value: jsonb("value").notNull(), // Configuration value (JSON)
+    description: text("description"),
+    isEncrypted: boolean("is_encrypted").default(false).notNull(), // For sensitive data
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => ({
+    orgConfigUnique: { unique: true, columns: [table.organizationId, table.key] },
+  })
+); // .enableRLS() - TEMPORARY: Disabled to allow db:push
+
+// Project audit logs table
+export const projectAuditLog = pgTable(
+  "project_audit_log",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    action: text("action").notNull(), // created, updated, deleted, environment_added, etc.
+    entityType: text("entity_type").notNull(), // project, environment, member
+    entityId: text("entity_id").notNull(), // ID of the affected entity
+    oldValues: jsonb("old_values"), // Previous values (for updates)
+    newValues: jsonb("new_values"), // New values
+    metadata: jsonb("metadata"), // Additional context
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  }
+); // .enableRLS() - TEMPORARY: Disabled to allow db:push
+
 // Export types
 export type User = typeof user.$inferSelect;
 export type NewUser = typeof user.$inferInsert;
@@ -174,3 +269,15 @@ export type NewMember = typeof member.$inferInsert;
 
 export type Invitation = typeof invitation.$inferSelect;
 export type NewInvitation = typeof invitation.$inferInsert;
+
+export type ProjectEnvironment = typeof projectEnvironment.$inferSelect;
+export type NewProjectEnvironment = typeof projectEnvironment.$inferInsert;
+
+export type ProjectFeature = typeof projectFeature.$inferSelect;
+export type NewProjectFeature = typeof projectFeature.$inferInsert;
+
+export type ProjectConfiguration = typeof projectConfiguration.$inferSelect;
+export type NewProjectConfiguration = typeof projectConfiguration.$inferInsert;
+
+export type ProjectAuditLog = typeof projectAuditLog.$inferSelect;
+export type NewProjectAuditLog = typeof projectAuditLog.$inferInsert;
