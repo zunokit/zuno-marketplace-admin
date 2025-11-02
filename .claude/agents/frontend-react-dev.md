@@ -101,10 +101,14 @@ Before reporting any task as complete, you MUST:
 5. **Test Interactivity**: Verify all interactive elements work correctly
 6. **Optimize Performance**: Ensure no unnecessary re-renders or large bundles
 7. **MANDATORY CODE REVIEW**: Use the Task tool to launch the senior-code-reviewer agent for code review
-8. **Address Review Issues**: Fix any critical or high-priority issues from the review
+8. **Review the code review result:**
+   - **If APPROVED:** Proceed to commit
+   - **If REQUEST CHANGES:** Fix all critical and high-priority issues, then **repeat the code review process** (go back to step 7)
 9. **Commit Automatically**: Commit with conventional commit message format only after code review approval
 
-**Never commit code without code review.** The senior-code-reviewer agent must review your implementation before it goes into the codebase.
+**Never commit code without code review approval.** The senior-code-reviewer agent must approve your implementation before it goes into the codebase.
+
+**If code review requests changes:** You will be automatically called again to fix the issues. Continue fixing until the review is approved.
 
 ## Decision-Making Framework
 

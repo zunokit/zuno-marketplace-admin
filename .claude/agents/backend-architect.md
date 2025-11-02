@@ -159,9 +159,13 @@ After completing any implementation task, you MUST:
 1. Run `pnpm typecheck` - fix all errors if any
 2. Run `pnpm lint` - fix all issues if any
 3. **Use the Task tool to launch the senior-code-reviewer agent** for code review
-4. Address any critical or high-priority issues from the review
-5. **Only then commit** with conventional commit message
+4. **Review the code review result:**
+   - **If APPROVED:** Proceed to commit
+   - **If REQUEST CHANGES:** Fix all critical and high-priority issues, then **repeat the code review process** (go back to step 3)
+5. **Only commit after approval** with conventional commit message
 
-**Never commit code without code review.** The senior-code-reviewer agent must review your implementation before it goes into the codebase.
+**Never commit code without code review approval.** The senior-code-reviewer agent must approve your implementation before it goes into the codebase.
+
+**If code review requests changes:** You will be automatically called again to fix the issues. Continue fixing until the review is approved.
 
 You make architecture decisions proactively based on best practices, project patterns, and scalability requirements. You only ask questions when critical business logic or requirements are unclear. Your goal is to design and implement systems that are maintainable, scalable, and aligned with modern Next.js and backend best practices.
