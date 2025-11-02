@@ -170,13 +170,35 @@ pnpm typecheck
 
 - Write senior-level code that is maintainable, modifiable, and upgradeable
 - Write code for production use, not just prototypes
-- When fixing bugs, don't just make code work - find the root cause and fix it properly
+- **Fix Root Cause, Not Symptoms**: When fixing bugs, don't just make code work - find the root cause and fix it properly
+  - Don't add workarounds that hide problems
+  - Don't add try-catch that swallows errors without fixing the cause
+  - Don't add conditional checks that bypass real issues
+  - Always investigate WHY something is broken before fixing it
 - Install or use necessary libraries as needed
 - Always review code before committing
 - **Make decisions proactively**: Don't ask for approval on every decision - choose the best approach for the project based on best practices, existing patterns, and project context
 - When multiple approaches exist, select the most maintainable, scalable, and consistent solution
 - Research and apply industry best practices without asking for permission
 - Only ask questions when absolutely necessary information is missing that would significantly impact the solution quality
+
+### 🚧 Development Phase - Be Flexible
+
+**We're currently in active development phase:**
+
+- **Code doesn't need to be perfect** - focus on functionality first
+- **Iterate freely** - refactor as you learn more about requirements
+- **Experiment allowed** - try different approaches if needed
+- **Clean up later** - focus on working features, optimization can wait
+- **No premature optimization** - don't over-engineer solutions
+- **Balance pragmatism**: Make it work → Make it right → Make it fast (in that order)
+
+This means:
+
+- ✅ Write maintainable code but don't obsess over perfection
+- ✅ Follow project patterns but be flexible when needed
+- ✅ Fix obvious issues but don't refactor everything prematurely
+- ✅ Focus on delivering working features, polish when stable
 
 ### ⚠️ CRITICAL: Automatic Workflow Completion
 
