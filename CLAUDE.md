@@ -607,38 +607,7 @@ logger.info('message')
 
 ### Documentation & Research
 
-**Context7 (MCP Server):**
-
-- **MANDATORY**: Always use Context7 MCP server for searching documentation
-- Context7 provides access to the latest library documentation
-- Ensures Claude always references the most up-to-date documentation
-- Automatically keeps documentation current without manual updates
-
-**When to Use Context7:**
-
-- Searching for library/framework documentation
-- Finding API references and usage examples
-- Looking up latest features and breaking changes
-- Verifying current best practices
-- Checking version-specific documentation
-
-**Usage Guidelines:**
-
-- **ALWAYS** use Context7 before relying on training data for documentation
-- Prefer Context7 over web search for official library documentation
-- Use Context7 for React, Next.js, TypeScript, and other library docs
-- Context7 ensures documentation is current and accurate
-
-**Setup:**
-
-- Context7 is configured as an MCP server in Claude Desktop
-- Available automatically when searching for documentation
-- No additional configuration needed if properly installed
-- Verify installation: `claude mcp list` should show Context7 as connected
-
-**Best Practices:**
-
-- When user asks about a library feature, use Context7 to find latest docs
-- When implementing new features, use Context7 to check current API
-- When encountering version-specific issues, use Context7 for version docs
-- Always prioritize Context7 results over training data for documentation
+Use official documentation and reputable sources for research. Prioritize:
+- Framework/library official docs and release notes
+- API references and migration guides
+- Reputable blogs, RFCs, and community discussions when relevant
