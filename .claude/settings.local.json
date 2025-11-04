@@ -18,7 +18,8 @@
       "Bash(git add:*)",
       "Bash(dir:*)",
       "Bash(npx shadcn@latest add:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []

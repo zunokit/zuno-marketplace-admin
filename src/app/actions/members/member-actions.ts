@@ -13,11 +13,20 @@ import {
   member as memberTable,
   invitation as invitationTable,
   user as userTable,
+  organization as organizationTable,
 } from '@/lib/infrastructure/database/schemas'
 import { requireAuth } from '@/lib/auth/middleware'
 import { errorHandler, ForbiddenError, NotFoundError, ValidationError } from '@/lib/utils/error-handler'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
 import { logger } from '@/lib/utils/logger'
+import { getEmailService } from '@/lib/infrastructure/external/email'
+import { invitationEmailTemplate } from '@/lib/infrastructure/external/email/templates'
+import {
+  generateInvitationToken,
+  hashInvitationToken,
+  generateInvitationUrl,
+  calculateExpirationDate,
+} from '@/lib/utils/invitation-token'
 
 /**
  * Get all members of an organization
@@ -150,6 +159,15 @@ export async function inviteUserAction(
         throw new ForbiddenError('Only admins and owners can invite users')
       }
 
+      // Get organization details
+      const organization = await db.query.organization.findFirst({
+        where: eq(organizationTable.id, organizationId),
+      })
+
+      if (!organization) {
+        throw new NotFoundError('Organization not found')
+      }
+
       // Check if user is already a member
       const existingMemberByEmail = await db
         .select({ userId: userTable.id })
@@ -183,9 +201,12 @@ export async function inviteUserAction(
         throw new ValidationError('An invitation has already been sent to this email')
       }
 
+      // Generate secure invitation token
+      const token = generateInvitationToken()
+      const tokenHash = hashInvitationToken(token)
+
       // Create invitation (expires in 7 days)
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 7)
+      const expiresAt = calculateExpirationDate(7)
 
       const [newInvitation] = await db
         .insert(invitationTable)
@@ -195,6 +216,7 @@ export async function inviteUserAction(
           email,
           role,
           inviterId: session.user.id,
+          token: tokenHash,
           expiresAt,
           status: 'pending',
         })
@@ -206,6 +228,53 @@ export async function inviteUserAction(
         email,
         role,
         inviterId: session.user.id,
+      })
+
+      // Generate invitation URL
+      const invitationUrl = generateInvitationUrl(newInvitation.id, token)
+
+      // Get inviter details
+      const inviter = await db.query.user.findFirst({
+        where: eq(userTable.id, session.user.id),
+      })
+
+      // Send invitation email
+      const emailService = getEmailService()
+
+      const { html, text, subject } = invitationEmailTemplate({
+        inviterName: inviter?.name || session.user.name,
+        organizationName: organization.name,
+        role,
+        invitationUrl,
+        expiresInDays: 7,
+      })
+
+      const emailResult = await emailService.send({
+        to: email,
+        subject,
+        html,
+        text,
+      })
+
+      if (!emailResult.success) {
+        logger.error('Failed to send invitation email', null, {
+          invitationId: newInvitation.id,
+          email,
+          error: emailResult.error,
+        })
+
+        // Delete invitation if email failed to send
+        await db.delete(invitationTable).where(eq(invitationTable.id, newInvitation.id))
+
+        throw new Error(
+          'Failed to send invitation email. Please check email service configuration.'
+        )
+      }
+
+      logger.info('Invitation email sent successfully', {
+        invitationId: newInvitation.id,
+        email,
+        messageId: emailResult.messageId,
       })
 
       return newInvitation

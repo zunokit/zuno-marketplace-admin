@@ -119,6 +119,7 @@ export const invitation = pgTable(
     status: text("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
     inviterId: text("inviter_id").notNull(),
+    token: text("token").notNull(), // Hashed token for secure invitation acceptance
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -135,6 +136,7 @@ export const invitation = pgTable(
     emailIdx: index("invitation_email_idx").on(table.email),
     statusIdx: index("invitation_status_idx").on(table.status),
     expiresAtIdx: index("invitation_expires_at_idx").on(table.expiresAt),
+    tokenIdx: index("invitation_token_idx").on(table.token),
     statusExpiresIdx: index("invitation_status_expires_idx").on(
       table.status,
       table.expiresAt
