@@ -4,6 +4,8 @@
  * Never use console.log directly - always use this logger
  */
 
+import { isDevelopment, isServer } from './environment'
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 interface LogContext {
@@ -11,8 +13,8 @@ interface LogContext {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development'
-  private isServer = typeof window === 'undefined'
+  private isDevelopment = isDevelopment()
+  private isServer = isServer()
 
   /**
    * Safe JSON.stringify that handles circular references

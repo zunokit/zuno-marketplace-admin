@@ -64,7 +64,8 @@ export function sanitizeError(error: unknown): {
 
   if (error instanceof Error) {
     // Don't expose internal error messages in production
-    const message = process.env.NODE_ENV === 'development'
+    const { isDevelopment } = require('./environment')
+    const message = isDevelopment()
       ? error.message
       : 'An unexpected error occurred'
 

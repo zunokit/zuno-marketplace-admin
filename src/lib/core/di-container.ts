@@ -2,6 +2,7 @@ import { ProjectRepository } from "@/lib/infrastructure/database/repositories/pr
 import { ProjectEnvironmentRepository } from "@/lib/infrastructure/database/repositories/project-environment.repository";
 import { ProjectAuditLogRepository } from "@/lib/infrastructure/database/repositories/project-audit-log.repository";
 import { EncryptionService } from "@/lib/infrastructure/external/encryption.service";
+import { QueryBuilderService } from "@/lib/core/services/query-builder.service";
 import { CreateProjectUseCase } from "@/lib/core/use-cases/projects/create-project.use-case";
 import { UpdateProjectUseCase } from "@/lib/core/use-cases/projects/update-project.use-case";
 import { DeleteProjectUseCase } from "@/lib/core/use-cases/projects/delete-project.use-case";
@@ -17,6 +18,7 @@ class DIContainer {
   private _projectEnvironmentRepository?: ProjectEnvironmentRepository;
   private _projectAuditLogRepository?: ProjectAuditLogRepository;
   private _encryptionService?: EncryptionService;
+  private _queryBuilderService?: QueryBuilderService;
 
   private constructor() {}
 
@@ -53,6 +55,13 @@ class DIContainer {
       this._encryptionService = new EncryptionService();
     }
     return this._encryptionService;
+  }
+
+  get queryBuilderService(): QueryBuilderService {
+    if (!this._queryBuilderService) {
+      this._queryBuilderService = new QueryBuilderService();
+    }
+    return this._queryBuilderService;
   }
 
   createProjectUseCase(): CreateProjectUseCase {
