@@ -2,62 +2,18 @@
 
 /**
  * Server Actions for SQL Query Execution
- * Provides secure SQL query execution with permissions and validation
+ * Clean architecture implementation using use cases and repositories
  */
 
-import { sql } from 'drizzle-orm'
-import { getProjectDb } from '@/lib/infrastructure/database/connections/project-connections'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
-import { errorHandler, ValidationError } from '@/lib/utils/error-handler'
-import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import type { ServerActionResponse } from '@/lib/utils/api-response'
 import { withServerAction } from '@/lib/utils/try-catch'
-import { logger } from '@/lib/utils/logger'
+import { container } from '@/lib/core/di-container'
+import type { QueryResult, SavedQuery } from '@/lib/core/domain/entities/query.entity'
 
-export type QueryResult = {
-  columns: string[]
-  rows: Record<string, unknown>[]
-  rowCount: number
-  executionTime: number
-  query: string
-  timestamp: Date
-}
-
-export type SavedQuery = {
-  id: string
-  name: string
-  query: string
-  description?: string
-  createdAt: Date
-}
-
-/**
- * Check if query is read-only (SELECT only)
- */
-function isReadOnlyQuery(query: string): boolean {
-  const trimmed = query.trim().toLowerCase()
-
-  // Allow SELECT, SHOW, EXPLAIN, DESCRIBE
-  const readOnlyPatterns = [/^select\s/i, /^show\s/i, /^explain\s/i, /^describe\s/i, /^desc\s/i]
-
-  return readOnlyPatterns.some((pattern) => pattern.test(trimmed))
-}
-
-/**
- * Check if query contains dangerous operations
- */
-function isDangerousQuery(query: string): boolean {
-  const dangerous = [
-    /drop\s+(table|database|schema|index)/i,
-    /truncate\s+table/i,
-    /alter\s+(table|database)/i,
-    /create\s+(table|database|schema)/i,
-    /grant\s/i,
-    /revoke\s/i,
-  ]
-
-  return dangerous.some((pattern) => pattern.test(query))
-}
+// Re-export types for compatibility with existing components
+export type { QueryResult, SavedQuery } from '@/lib/core/domain/entities/query.entity'
 
 /**
  * Execute SQL query with security checks
@@ -69,58 +25,27 @@ export async function executeQueryAction(
   return withServerAction(async () => {
     const session = await requireAuth()
 
-    // Validate query is not empty
-    if (!query || query.trim().length === 0) {
-      throw new ValidationError('Query cannot be empty')
-    }
+    // Check if user has data.read permission (minimum for queries)
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
 
-    const isReadOnly = isReadOnlyQuery(query)
-
-    // Check permissions based on query type
-    if (isReadOnly) {
-      await requireProjectPermission(session.user.id, projectId, 'data.read')
-    } else {
-      // For mutations, require special permission
-      await requireProjectPermission(session.user.id, projectId, 'data.update')
-
-      // Additional safety check for dangerous operations
-      if (isDangerousQuery(query)) {
-        throw new ValidationError(
-          'Dangerous operations (DROP, TRUNCATE, ALTER) are not allowed through the query interface'
-        )
+    // Check if user has data.update permission for mutations (don't throw)
+    const hasUpdatePermission = await (async () => {
+      try {
+        await requireProjectPermission(session.user.id, projectId, 'data.update')
+        return true
+      } catch {
+        return false
       }
-    }
+    })()
 
-    const result = await errorHandler(async () => {
-      const db = await getProjectDb(projectId)
-
-      const startTime = performance.now()
-      const queryResult = await db.execute<Record<string, unknown>>(sql.raw(query))
-      const endTime = performance.now()
-
-      const executionTime = Math.round(endTime - startTime)
-
-      // Extract column names from first row
-      const columns = queryResult.length > 0 ? Object.keys(queryResult[0]) : []
-
-      logger.info('Query executed', {
-        projectId,
-        userId: session.user.id,
-        queryType: isReadOnly ? 'SELECT' : 'MUTATION',
-        rowCount: queryResult.length,
-        executionTime,
-        queryPreview: query.substring(0, 100),
-      })
-
-      return {
-        columns,
-        rows: queryResult,
-        rowCount: queryResult.length,
-        executionTime,
-        query,
-        timestamp: new Date(),
-      }
-    }, 'executeQuery')
+    // Execute query through use case
+    const useCase = container.executeQueryUseCase()
+    const result = await useCase.execute({
+      projectId,
+      query,
+      userId: session.user.id,
+      hasUpdatePermission,
+    })
 
     return result
   }, 'executeQueryAction')
@@ -145,7 +70,6 @@ export async function getQueryHistoryAction(
 
 /**
  * Save a query for later use
- * Future enhancement: Store in database
  */
 export async function saveQueryAction(
   projectId: string,
@@ -157,28 +81,14 @@ export async function saveQueryAction(
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
-    if (!name || name.trim().length === 0) {
-      throw new ValidationError('Query name is required')
-    }
-
-    if (!query || query.trim().length === 0) {
-      throw new ValidationError('Query cannot be empty')
-    }
-
-    // For now, return a mock saved query
-    // Future: Store in database table
-    const savedQuery: SavedQuery = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      query: query.trim(),
-      description: description?.trim(),
-      createdAt: new Date(),
-    }
-
-    logger.info('Query saved', {
+    // Save query through use case
+    const useCase = container.saveQueryUseCase()
+    const savedQuery = await useCase.execute({
       projectId,
       userId: session.user.id,
-      queryName: name,
+      name,
+      query,
+      description,
     })
 
     return savedQuery

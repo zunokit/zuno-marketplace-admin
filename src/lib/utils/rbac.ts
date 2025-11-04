@@ -241,15 +241,16 @@ export function withPermissionCheck<TArgs extends unknown[], TReturn>(
   }
 }
 
+
 /**
  * Resource guard for components
  */
 export function createResourceGuard(resourceType: string) {
   return {
-    canRead: async (userId: string, resourceId?: string) => 
+    canRead: async (userId: string, resourceId?: string) =>
       await rbacService.canAccess({ userId, resourceId, resourceType, action: `${resourceType}.read` }),
-    
-    canCreate: async (userId: string, resourceId?: string) => 
+
+    canCreate: async (userId: string, resourceId?: string) =>
       await rbacService.canAccess({ userId, resourceId, resourceType, action: `${resourceType}.create` }),
     
     canUpdate: async (userId: string, resourceId?: string) => 
@@ -274,10 +275,115 @@ export function createResourceGuard(resourceType: string) {
  */
 export const PermissionUtils = {
   /**
-   * Check if role includes specific permission
+   * Check if user can perform action on project
+   */
+  canPerformProjectAction: async (
+    userId: string,
+    projectId: string,
+    permission: ProjectPermission
+  ): Promise<boolean> => {
+    return await checkProjectPermission(userId, projectId, permission)
+      .then(() => true)
+      .catch(() => false)
+  },
+
+  /**
+   * Check multiple permissions and return which ones user has
+   */
+  checkMultiplePermissions: async (
+    userId: string,
+    projectId: string,
+    permissions: ProjectPermission[]
+  ): Promise<Record<ProjectPermission, boolean>> => {
+    const results: Record<string, boolean> = {}
+
+    for (const permission of permissions) {
+      results[permission] = await PermissionUtils.canPerformProjectAction(userId, projectId, permission)
+    }
+
+    return results as Record<ProjectPermission, boolean>
+  },
+
+  /**
+   * Get highest role user has across all projects
+   */
+  getHighestRole: async (userId: string): Promise<ProjectRole | null> => {
+    try {
+      const memberships = await db.query.member.findMany({
+        where: eq(memberTable.userId, userId),
+      })
+
+      if (memberships.length === 0) return null
+
+      const roleHierarchy: Record<ProjectRole, number> = {
+        owner: 4,
+        admin: 3,
+        editor: 2,
+        viewer: 1,
+      }
+
+      let highestRole: ProjectRole = 'viewer'
+      let highestLevel = 0
+
+      for (const membership of memberships) {
+        const role = membership.role as ProjectRole
+        const level = roleHierarchy[role] || 0
+        if (level > highestLevel) {
+          highestLevel = level
+          highestRole = role
+        }
+      }
+
+      return highestRole
+    } catch (error) {
+      logger.error('Error getting highest role', error, { userId })
+      return null
+    }
+  },
+
+  /**
+   * Check if role has permission
    */
   roleHasPermission: (role: ProjectRole, permission: ProjectPermission): boolean => {
     return ROLE_PERMISSIONS[role]?.includes(permission) || false
+  },
+
+  /**
+   * Get all available permissions
+   */
+  getAllPermissions: (): ProjectPermission[] => {
+    return [
+      'project.read',
+      'project.update',
+      'project.settings',
+      'project.delete',
+      'members.invite',
+      'members.remove',
+      'members.update_role',
+      'data.create',
+      'data.read',
+      'data.update',
+      'data.delete',
+    ]
+  },
+
+  /**
+   * Get permissions difference between two roles
+   */
+  getPermissionDifference: (
+    fromRole: ProjectRole,
+    toRole: ProjectRole
+  ): {
+    added: ProjectPermission[]
+    removed: ProjectPermission[]
+  } => {
+    const fromPermissions = ROLE_PERMISSIONS[fromRole] || []
+    const toPermissions = ROLE_PERMISSIONS[toRole] || []
+
+    const added = toPermissions.filter(p => !fromPermissions.includes(p))
+    const removed = fromPermissions.filter(p => !toPermissions.includes(p))
+
+    return { added, removed }
   },
 
   /**

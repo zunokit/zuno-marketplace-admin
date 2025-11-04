@@ -3,6 +3,7 @@ import { ProjectEnvironmentRepository } from "@/lib/infrastructure/database/repo
 import { ProjectAuditLogRepository } from "@/lib/infrastructure/database/repositories/project-audit-log.repository";
 import { MemberRepository } from "@/lib/infrastructure/database/repositories/member.repository";
 import { InvitationRepository } from "@/lib/infrastructure/database/repositories/invitation.repository";
+import { QueryRepository } from "@/lib/infrastructure/database/repositories/query.repository";
 import { EncryptionService } from "@/lib/infrastructure/external/encryption.service";
 import { QueryBuilderService } from "@/lib/core/services/query-builder.service";
 import { getEmailService } from "@/lib/infrastructure/external/email";
@@ -19,6 +20,8 @@ import { InviteUserUseCase } from "@/lib/core/use-cases/members/invite-user.use-
 import { UpdateMemberRoleUseCase } from "@/lib/core/use-cases/members/update-member-role.use-case";
 import { RemoveMemberUseCase } from "@/lib/core/use-cases/members/remove-member.use-case";
 import { RevokeInvitationUseCase } from "@/lib/core/use-cases/members/revoke-invitation.use-case";
+import { ExecuteQueryUseCase } from "@/lib/core/use-cases/queries/execute-query.use-case";
+import { SaveQueryUseCase } from "@/lib/core/use-cases/queries/save-query.use-case";
 
 class DIContainer {
   private static instance: DIContainer;
@@ -28,6 +31,7 @@ class DIContainer {
   private _projectAuditLogRepository?: ProjectAuditLogRepository;
   private _memberRepository?: MemberRepository;
   private _invitationRepository?: InvitationRepository;
+  private _queryRepository?: QueryRepository;
   private _encryptionService?: EncryptionService;
   private _queryBuilderService?: QueryBuilderService;
 
@@ -87,6 +91,13 @@ class DIContainer {
       this._invitationRepository = new InvitationRepository();
     }
     return this._invitationRepository;
+  }
+
+  get queryRepository(): QueryRepository {
+    if (!this._queryRepository) {
+      this._queryRepository = new QueryRepository();
+    }
+    return this._queryRepository;
   }
 
   createProjectUseCase(): CreateProjectUseCase {
@@ -167,6 +178,14 @@ class DIContainer {
       this.memberRepository,
       this.invitationRepository
     );
+  }
+
+  executeQueryUseCase(): ExecuteQueryUseCase {
+    return new ExecuteQueryUseCase(this.queryRepository);
+  }
+
+  saveQueryUseCase(): SaveQueryUseCase {
+    return new SaveQueryUseCase(this.queryRepository);
   }
 }
 
