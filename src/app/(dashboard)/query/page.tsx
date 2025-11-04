@@ -206,10 +206,10 @@ export default function QueryPage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => exportToCsv(result.rows, result.columns)}>
+                    <Button variant="outline" size="sm" onClick={() => exportToCsv(result)}>
                       Export CSV
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => exportToJson(result.rows)}>
+                    <Button variant="outline" size="sm" onClick={() => exportToJson(result)}>
                       Export JSON
                     </Button>
                   </div>

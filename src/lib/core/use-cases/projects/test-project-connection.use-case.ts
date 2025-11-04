@@ -10,12 +10,22 @@ import { organization as organizationTable } from "@/lib/infrastructure/database
 import { eq } from "drizzle-orm";
 import { decrypt } from "@/lib/crypto";
 import postgres from "postgres";
+import { withUseCase } from "@/lib/utils/service-error-handler";
 
 export class TestProjectConnectionUseCase {
   async execute(
     projectId: string,
     userId: string
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    details?: {
+      host?: string;
+      database?: string;
+      port?: number;
+      responseTime?: number;
+    };
+  }> {
     // Fetch project from database
     const project = await db.query.organization.findFirst({
       where: eq(organizationTable.id, projectId),
@@ -51,6 +61,12 @@ export class TestProjectConnectionUseCase {
       throw new ValidationError(validationError);
     }
 
+    // Parse URL to extract host, database, port information
+    const url = new URL(normalizedUrl);
+    const host = url.hostname;
+    const port = parseInt(url.port) || 5432;
+    const database = url.pathname.substring(1); // Remove leading '/'
+
     // Test the connection
     const sql = postgres(normalizedUrl, {
       max: DATABASE_CONFIG.TEST_CONNECTION.MAX_CONNECTIONS,
@@ -73,6 +89,12 @@ export class TestProjectConnectionUseCase {
       return {
         success: true,
         message: "Connection successful",
+        details: {
+          host,
+          database,
+          port,
+          responseTime,
+        },
       };
     } catch (error) {
       await sql.end();

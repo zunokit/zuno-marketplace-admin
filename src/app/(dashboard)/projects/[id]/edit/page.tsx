@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { ProjectEntity } from '@/lib/core/domain/entities/project.entity'
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -17,14 +18,11 @@ export default async function EditProjectPage({ params }: PageProps) {
     notFound()
   }
 
-  const project = result.data as {
-    id: string
-    name: string
-    slug: string
-    projectType: string
-    description: string | null
-    metadata: Record<string, unknown> | null
+  if (!result.success || !result.data) {
+    notFound()
   }
+  
+  const project = result.data // Properly typed from action response
 
   return (
     <div className="space-y-6">
@@ -50,9 +48,9 @@ export default async function EditProjectPage({ params }: PageProps) {
         defaultValues={{
           name: project.name,
           slug: project.slug,
-          projectType: project.projectType,
-          description: project.description,
-          metadata: project.metadata,
+          projectType: project.projectType || '',
+          description: project.description || '',
+          metadata: project.metadataJson || null,
         }}
       />
     </div>

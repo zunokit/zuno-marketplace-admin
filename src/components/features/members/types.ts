@@ -1,31 +1,14 @@
 /**
  * Members Feature Types
- * Types specific to the member management feature
+ * Re-exports centralized domain entities for use in components
  */
 
-import type { ProjectRole } from '@/types/domain.types'
+import type { MemberWithUserDetails } from '@/lib/core/domain/entities/member.entity'
+import type { InvitationWithInviterDetails } from '@/lib/core/domain/entities/invitation.entity'
 
-export interface Member {
-  id: string
-  role: ProjectRole
-  createdAt: Date
-  userId: string
-  userName: string
-  userEmail: string
-  userImage: string | null
-  userRole: string
-}
-
-export interface Invitation {
-  id: string
-  email: string
-  role: ProjectRole
-  status: 'pending' | 'accepted' | 'expired'
-  expiresAt: Date
-  createdAt: Date
-  inviterName: string
-  inviterEmail: string
-}
+// Re-export centralized domain entities with simpler names
+export type Member = MemberWithUserDetails
+export type Invitation = InvitationWithInviterDetails
 
 export interface MembersState {
   members: Member[]

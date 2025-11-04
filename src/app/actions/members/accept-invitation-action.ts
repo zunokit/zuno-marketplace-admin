@@ -152,7 +152,17 @@ export async function acceptInvitationAction(
  */
 export async function getInvitationDetailsAction(
   invitationId: string
-): Promise<ServerActionResponse> {
+): Promise<ServerActionResponse<{
+  id: string
+  email: string
+  role: string
+  status: string
+  expiresAt: Date
+  organizationId: string
+  organizationName: string
+  inviterName: string
+  inviterEmail: string
+}>> {
   try {
     const invitation = await errorHandler(async () => {
       const result = await db
@@ -184,8 +194,15 @@ export async function getInvitationDetailsAction(
       })
 
       return {
-        ...invitation,
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role as string, // Keep as string since it might be undefined in DB
+        status: invitation.status,
+        expiresAt: invitation.expiresAt,
+        organizationId: invitation.organizationId,
         organizationName: organization?.name || 'Unknown Organization',
+        inviterName: invitation.inviterName,
+        inviterEmail: invitation.inviterEmail,
       }
     }, 'getInvitationDetails')
 

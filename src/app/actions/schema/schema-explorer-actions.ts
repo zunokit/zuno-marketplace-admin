@@ -11,6 +11,7 @@
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import { withServerAction } from '@/lib/utils/try-catch'
 import {
   getTableSchema,
   getTableMetadata,
@@ -42,7 +43,7 @@ export async function getTableDetailsAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<TableDetails>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -123,11 +124,8 @@ export async function getTableDetailsAction(
       dependencyCount: dependencies.length,
     })
 
-    return serverActionSuccess(tableDetails)
-  } catch (error) {
-    logger.error('Failed to fetch table details', { projectId, tableName, error })
-    return serverActionError(error)
-  }
+    return tableDetails
+  }, 'getTableDetailsAction')
 }
 
 /**
@@ -145,7 +143,7 @@ export async function getTableDetailsAction(
 export async function getDatabaseStatisticsAction(
   projectId: string
 ): Promise<ServerActionResponse<DatabaseStatistics>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -201,12 +199,8 @@ export async function getDatabaseStatisticsAction(
       totalRows: stats.totalRowsEstimate,
     })
 
-    return serverActionSuccess(databaseStatistics)
-  } catch (error) {
-    logger.error('Failed to fetch database statistics', { projectId, error })
-    // Type-safe error handling
-    return serverActionError(error)
-  }
+    return databaseStatistics
+  }, 'getDatabaseStatisticsAction')
 }
 
 /**
@@ -233,7 +227,7 @@ export async function getTableMetadataAction(
   toastSize: string | null
   hasToastTable: boolean
 }>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -248,12 +242,8 @@ export async function getTableMetadataAction(
       rowCount: metadata.rowCountEstimate,
     })
 
-    return serverActionSuccess(metadata)
-  } catch (error) {
-    logger.error('Failed to fetch table metadata', { projectId, tableName, error })
-    // Type-safe error handling
-    return serverActionError(error)
-  }
+    return metadata
+  }, 'getTableMetadataAction')
 }
 
 /**
@@ -275,7 +265,7 @@ export async function getTableIndexesAction(
   indexDef: string
   tablespace: string | null
 }[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -289,11 +279,8 @@ export async function getTableIndexesAction(
       indexCount: indexes.length,
     })
 
-    return serverActionSuccess(indexes)
-  } catch (error) {
-    logger.error('Failed to fetch table indexes', { projectId, tableName, error })
-    return serverActionError(error)
-  }
+    return indexes
+  }, 'getTableIndexesAction')
 }
 
 /**
@@ -315,7 +302,7 @@ export async function getTableConstraintsAction(
   updateRule: string | null
   deleteRule: string | null
 }[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -329,12 +316,8 @@ export async function getTableConstraintsAction(
       constraintCount: constraints.length,
     })
 
-    return serverActionSuccess(constraints)
-  } catch (error) {
-    logger.error('Failed to fetch table constraints', { projectId, tableName, error })
-    // Type-safe error handling
-    return serverActionError(error)
-  }
+    return constraints
+  }, 'getTableConstraintsAction')
 }
 
 /**
@@ -347,7 +330,7 @@ export async function generateTableDDLAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<string>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -362,12 +345,8 @@ export async function generateTableDDLAction(
 
     logger.info('Generated table DDL', { projectId, tableName })
 
-    return serverActionSuccess(ddlResult.data)
-  } catch (error) {
-    logger.error('Failed to generate table DDL', { projectId, tableName, error })
-    // Type-safe error handling
-    return serverActionError(error)
-  }
+    return ddlResult.data
+  }, 'generateTableDDLAction')
 }
 
 /**

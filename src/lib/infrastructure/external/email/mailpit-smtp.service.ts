@@ -4,7 +4,9 @@
  * Mailpit is a local SMTP server for testing emails
  */
 
-import nodemailer, { Transporter } from 'nodemailer'
+import nodemailer from 'nodemailer'
+// Import Transporter type directly from nodemailer's types
+import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 import { BaseEmailService } from './base-email.service'
 import {
   EmailOptions,
@@ -13,7 +15,7 @@ import {
 import { logger } from '@/lib/utils/logger'
 
 export class MailpitSmtpService extends BaseEmailService {
-  private transporter: Transporter | null = null
+  private transporter: ReturnType<typeof nodemailer.createTransport> | null = null
   private host: string
   private port: number
   private user?: string

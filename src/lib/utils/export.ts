@@ -1,7 +1,38 @@
 /**
  * Data Export Utilities
- * Export data to CSV and JSON formats
+ * Export data to CSV and JSON formats using generic functions
  */
+
+/**
+ * Escape CSV value (handle quotes, commas, newlines)
+ */
+function escapeCSVValue(value: string): string {
+  // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+/**
+ * Format value for export (handle null, objects, arrays, etc.)
+ */
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value)
+  }
+
+  return String(value)
+}
+
+/**
+ * Generic data converter function
+ */
+type DataConverter<T> = (data: T) => string;
 
 /**
  * Convert array of objects to CSV string
@@ -31,47 +62,15 @@ export function convertToCSV(data: Record<string, unknown>[]): string {
 }
 
 /**
- * Escape CSV value (handle quotes, commas, newlines)
+ * Generic data formatter function
  */
-function escapeCSVValue(value: string): string {
-  // If value contains comma, quote, or newline, wrap in quotes and escape quotes
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
-}
-
-/**
- * Format value for export (handle null, objects, arrays, etc.)
- */
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) {
-    return ''
-  }
-
-  if (typeof value === 'object') {
-    return JSON.stringify(value)
-  }
-
-  return String(value)
-}
-
-/**
- * Download data as CSV file
- */
-export function downloadCSV(data: Record<string, unknown>[], filename: string): void {
-  const csv = convertToCSV(data)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  downloadBlob(blob, `${filename}.csv`)
-}
-
-/**
- * Download data as JSON file
- */
-export function downloadJSON(data: Record<string, unknown>[], filename: string): void {
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' })
-  downloadBlob(blob, `${filename}.json`)
+function formatData<T>(
+  data: T,
+  converter: DataConverter<T>,
+  mimeType: string
+): Blob {
+  const content = converter(data);
+  return new Blob([content], { type: `${mimeType};charset=utf-8;` });
 }
 
 /**
@@ -91,4 +90,32 @@ function downloadBlob(blob: Blob, filename: string): void {
 
   // Clean up the URL object
   setTimeout(() => URL.revokeObjectURL(url), 100)
+}
+
+/**
+ * Generic download function
+ */
+function downloadGeneric<T>(
+  data: T,
+  filename: string,
+  converter: DataConverter<T>,
+  mimeType: string,
+  extension: string
+): void {
+  const blob = formatData(data, converter, mimeType);
+  downloadBlob(blob, `${filename}.${extension}`);
+}
+
+/**
+ * Download data as CSV file
+ */
+export function downloadCSV(data: Record<string, unknown>[], filename: string): void {
+  downloadGeneric(data, filename, convertToCSV, 'text/csv', 'csv');
+}
+
+/**
+ * Download data as JSON file
+ */
+export function downloadJSON(data: Record<string, unknown>[], filename: string): void {
+  downloadGeneric(data, filename, (d) => JSON.stringify(d, null, 2), 'application/json', 'json');
 }

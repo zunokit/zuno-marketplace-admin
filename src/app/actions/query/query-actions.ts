@@ -11,6 +11,7 @@ import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { errorHandler, ValidationError } from '@/lib/utils/error-handler'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import { withServerAction } from '@/lib/utils/try-catch'
 import { logger } from '@/lib/utils/logger'
 
 export type QueryResult = {
@@ -19,6 +20,7 @@ export type QueryResult = {
   rowCount: number
   executionTime: number
   query: string
+  timestamp: Date
 }
 
 export type SavedQuery = {
@@ -64,7 +66,7 @@ export async function executeQueryAction(
   projectId: string,
   query: string
 ): Promise<ServerActionResponse<QueryResult>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
 
     // Validate query is not empty
@@ -116,13 +118,12 @@ export async function executeQueryAction(
         rowCount: queryResult.length,
         executionTime,
         query,
+        timestamp: new Date(),
       }
     }, 'executeQuery')
 
-    return serverActionSuccess(result)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return result
+  }, 'executeQueryAction')
 }
 
 /**
@@ -132,16 +133,14 @@ export async function executeQueryAction(
 export async function getQueryHistoryAction(
   projectId: string
 ): Promise<ServerActionResponse<QueryResult[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
     // History is stored client-side for now
     // Future: Could store in database with user_id + project_id
-    return serverActionSuccess([])
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return []
+  }, 'getQueryHistoryAction')
 }
 
 /**
@@ -154,7 +153,7 @@ export async function saveQueryAction(
   query: string,
   description?: string
 ): Promise<ServerActionResponse<SavedQuery>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -182,8 +181,6 @@ export async function saveQueryAction(
       queryName: name,
     })
 
-    return serverActionSuccess(savedQuery)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return savedQuery
+  }, 'saveQueryAction')
 }

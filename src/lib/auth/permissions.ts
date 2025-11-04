@@ -1,9 +1,10 @@
 import { auth } from './config'
 import { db } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { member as memberTable } from '@/lib/infrastructure/database/schemas'
+import { member as memberTable, user as userTable } from '@/lib/infrastructure/database/schemas'
 import type { ProjectPermission, ProjectRole } from '@/types/projects'
 import { ROLE_PERMISSIONS } from '@/types/projects'
+import { tryServiceOperation } from '@/lib/utils/service-error-handler'
 
 /**
  * Check if a user has a specific permission in a project
@@ -13,7 +14,7 @@ export async function checkProjectPermission(
   projectId: string,
   permission: ProjectPermission
 ): Promise<boolean> {
-  try {
+  const result = await tryServiceOperation(async () => {
     // Get user's role in the project
     const membership = await db.query.member.findFirst({
       where: and(
@@ -30,10 +31,9 @@ export async function checkProjectPermission(
     const permissions = ROLE_PERMISSIONS[role]
 
     return permissions.includes(permission)
-  } catch (error) {
-    console.error('Error checking project permission:', error)
-    return false
-  }
+  }, 'checkProjectPermission')
+
+  return result.success ? result.data : false
 }
 
 /**
@@ -55,16 +55,15 @@ export async function requireProjectPermission(
  * Check if a user is a super admin
  */
 export async function isSuperAdmin(userId: string): Promise<boolean> {
-  try {
+  const result = await tryServiceOperation(async () => {
     const user = await db.query.user.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
+      where: eq(userTable.id, userId),
     })
 
-    return user?.role?.includes('super_admin') || false
-  } catch (error) {
-    console.error('Error checking super admin status:', error)
-    return false
-  }
+    return user?.role === 'super_admin' || false
+  }, 'isSuperAdmin')
+
+  return result.success ? result.data : false
 }
 
 /**
@@ -74,7 +73,7 @@ export async function getUserProjectRole(
   userId: string,
   projectId: string
 ): Promise<ProjectRole | null> {
-  try {
+  const result = await tryServiceOperation(async () => {
     const membership = await db.query.member.findFirst({
       where: and(
         eq(memberTable.userId, userId),
@@ -83,17 +82,16 @@ export async function getUserProjectRole(
     })
 
     return membership?.role as ProjectRole | null
-  } catch (error) {
-    console.error('Error getting user project role:', error)
-    return null
-  }
+  }, 'getUserProjectRole')
+
+  return result.success ? result.data : null
 }
 
 /**
  * Get all projects a user has access to
  */
 export async function getUserProjects(userId: string) {
-  try {
+  const result = await tryServiceOperation(async () => {
     const memberships = await db.query.member.findMany({
       where: eq(memberTable.userId, userId),
     })
@@ -102,10 +100,9 @@ export async function getUserProjects(userId: string) {
       organizationId: m.organizationId,
       role: m.role as ProjectRole,
     }))
-  } catch (error) {
-    console.error('Error getting user projects:', error)
-    return []
-  }
+  }, 'getUserProjects')
+
+  return result.success ? result.data : []
 }
 
 /**
@@ -117,7 +114,7 @@ export async function checkAdminPermission(
   resource: string,
   action: string
 ): Promise<boolean> {
-  try {
+  const result = await tryServiceOperation(async () => {
     const result = await auth.api.userHasPermission({
       body: {
         userId,
@@ -128,8 +125,7 @@ export async function checkAdminPermission(
     })
 
     return result?.success || false
-  } catch (error) {
-    console.error('Error checking admin permission:', error)
-    return false
-  }
+  }, 'checkAdminPermission')
+
+  return result.success ? result.data : false
 }

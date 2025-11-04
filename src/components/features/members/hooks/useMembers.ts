@@ -27,7 +27,7 @@ export function useMembers() {
     const result = await getOrganizationMembersAction(activeProject.id)
 
     if (result.success && result.data) {
-      setMembers(result.data as Member[])
+      setMembers(result.data)
     } else if (!result.success && 'error' in result) {
       toast.error(result.error)
     }
@@ -42,7 +42,7 @@ export function useMembers() {
     const result = await getOrganizationInvitationsAction(activeProject.id)
 
     if (result.success && result.data) {
-      setInvitations(result.data as Invitation[])
+      setInvitations(result.data)
     } else if (!result.success && 'error' in result) {
       // Silently fail if user doesn't have permission
       if (!result.error.includes('permission')) {

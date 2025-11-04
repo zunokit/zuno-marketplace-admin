@@ -9,6 +9,7 @@ import {
   serverActionError,
   type ServerActionResponse,
 } from "@/lib/utils/api-response";
+import { withServerAction } from "@/lib/utils/try-catch";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -18,8 +19,8 @@ import {
 import { CACHE_TAGS, CACHE_REVALIDATION, DATABASE_CONFIG } from "@/lib/constants";
 import { container } from "@/lib/core/di-container";
 
-export async function getAllProjectsAction(): Promise<ServerActionResponse> {
-  try {
+export async function getAllProjectsAction(): Promise<ServerActionResponse<ProjectEntity[]>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -38,16 +39,16 @@ export async function getAllProjectsAction(): Promise<ServerActionResponse> {
       session.user.id
     );
 
-    return serverActionSuccess(result.projects);
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return result.projects;
+  }, 'getAllProjectsAction');
 }
+
+import type { ProjectEntity } from "@/lib/core/domain/entities/project.entity";
 
 export async function getProjectByIdAction(
   projectId: string
-): Promise<ServerActionResponse> {
-  try {
+): Promise<ServerActionResponse<ProjectEntity>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -58,16 +59,14 @@ export async function getProjectByIdAction(
     const getProjectUseCase = container.getProjectUseCase();
     const project = await getProjectUseCase.execute(projectId, session.user.id);
 
-    return serverActionSuccess(project);
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return project;
+  }, 'getProjectByIdAction');
 }
 
 export async function createProjectAction(
   input: CreateProjectInput
-): Promise<ServerActionResponse> {
-  try {
+): Promise<ServerActionResponse<ProjectEntity>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -86,22 +85,17 @@ export async function createProjectAction(
     revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_INDEX);
     revalidateTag(CACHE_TAGS.PROJECT_REGISTRY, 'max');
 
-    return serverActionSuccess(
-      {
-        ...project,
-        databaseUrl: DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER,
-      },
-      "Project created successfully"
-    );
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return {
+      ...project,
+      databaseUrl: DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER,
+    };
+  }, 'createProjectAction');
 }
 
 export async function updateProjectAction(
   input: UpdateProjectInput
-): Promise<ServerActionResponse> {
-  try {
+): Promise<ServerActionResponse<ProjectEntity>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -120,22 +114,17 @@ export async function updateProjectAction(
     revalidatePath(`/projects/${validatedInput.id}`);
     revalidateTag(CACHE_TAGS.PROJECT_REGISTRY, 'max');
 
-    return serverActionSuccess(
-      {
-        ...project,
-        databaseUrl: project.databaseUrl ? DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER : null,
-      },
-      "Project updated successfully"
-    );
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return {
+      ...project,
+      databaseUrl: project.databaseUrl ? DATABASE_CONFIG.ENCRYPTED_PLACEHOLDER : null,
+    };
+  }, 'updateProjectAction');
 }
 
 export async function deleteProjectAction(
   projectId: string
-): Promise<ServerActionResponse> {
-  try {
+): Promise<ServerActionResponse<{ deleted: boolean }>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -152,31 +141,33 @@ export async function deleteProjectAction(
     revalidatePath(CACHE_REVALIDATION.PATHS.PROJECTS_INDEX);
     revalidateTag(CACHE_TAGS.PROJECT_REGISTRY, 'max');
 
-    return serverActionSuccess(
-      { deleted: true },
-      "Project deleted successfully"
-    );
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return { deleted: true };
+  }, 'deleteProjectAction');
 }
 
-export async function getProjectsRegistryAction(): Promise<ServerActionResponse> {
-  try {
+export async function getProjectsRegistryAction(): Promise<ServerActionResponse<Record<string, unknown>>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const getProjectsRegistryUseCase = container.getProjectsRegistryUseCase();
     const registry = await getProjectsRegistryUseCase.execute(session.user.id);
 
-    return serverActionSuccess(registry);
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return registry;
+  }, 'getProjectsRegistryAction');
 }
 
 export async function testProjectConnectionAction(
   projectId: string
-): Promise<ServerActionResponse> {
-  try {
+): Promise<ServerActionResponse<{
+  success: boolean;
+  message: string;
+  details?: {
+    host?: string;
+    database?: string;
+    port?: number;
+    responseTime?: number;
+  };
+}>> {
+  return withServerAction(async () => {
     const session = await requireAuth();
     const isSuperAdminUser = await isSuperAdmin(session.user.id);
 
@@ -187,8 +178,6 @@ export async function testProjectConnectionAction(
     const testProjectConnectionUseCase = container.testProjectConnectionUseCase();
     const result = await testProjectConnectionUseCase.execute(projectId, session.user.id);
 
-    return serverActionSuccess(result);
-  } catch (error) {
-    return serverActionError(error);
-  }
+    return result;
+  }, 'testProjectConnectionAction');
 }

@@ -55,7 +55,7 @@ export function TestConnectionDialog({
       setTestResult({
         success: true,
         message: result.message || 'Connection successful',
-        details: result.data as TestResult['details'],
+        details: result.data?.details || {},
       })
       toast.success('Database connection test passed')
     } else {

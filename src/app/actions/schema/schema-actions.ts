@@ -8,6 +8,7 @@
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import { withServerAction } from '@/lib/utils/try-catch'
 import {
   getTableSchema,
   getProjectTables,
@@ -63,7 +64,7 @@ export type CompleteSchemaInfo = {
 export async function getCompleteSchemaAction(
   projectId: string
 ): Promise<ServerActionResponse<CompleteSchemaInfo>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -135,10 +136,8 @@ export async function getCompleteSchemaAction(
       relationshipCount: uniqueRelationships.length,
     })
 
-    return serverActionSuccess(result)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return result
+  }, 'getCompleteSchemaAction')
 }
 
 /**
@@ -149,7 +148,7 @@ export async function getTableMetadataAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<TableMetadata>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -164,10 +163,8 @@ export async function getTableMetadataAction(
       rowCount: metadata.rowCountEstimate,
     })
 
-    return serverActionSuccess(metadata)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return metadata
+  }, 'getTableMetadataAction')
 }
 
 /**
@@ -178,7 +175,7 @@ export async function getTableConstraintsAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<TableConstraint[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -192,10 +189,8 @@ export async function getTableConstraintsAction(
       constraintCount: constraints.length,
     })
 
-    return serverActionSuccess(constraints)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return constraints
+  }, 'getTableConstraintsAction')
 }
 
 /**
@@ -206,7 +201,7 @@ export async function getTableIndexesAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<TableIndex[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -220,10 +215,8 @@ export async function getTableIndexesAction(
       indexCount: indexes.length,
     })
 
-    return serverActionSuccess(indexes)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return indexes
+  }, 'getTableIndexesAction')
 }
 
 /**
@@ -234,7 +227,7 @@ export async function getTableDependenciesAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<TableDependency[]>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -248,10 +241,8 @@ export async function getTableDependenciesAction(
       dependencyCount: dependencies.length,
     })
 
-    return serverActionSuccess(dependencies)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return dependencies
+  }, 'getTableDependenciesAction')
 }
 
 /**
@@ -261,7 +252,7 @@ export async function getTableDependenciesAction(
 export async function getDatabaseStatisticsAction(
   projectId: string
 ): Promise<ServerActionResponse<DatabaseStatistics>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -277,10 +268,8 @@ export async function getDatabaseStatisticsAction(
       dataToIndexRatio: statistics.dataToIndexRatio.toFixed(2),
     })
 
-    return serverActionSuccess(statistics)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return statistics
+  }, 'getDatabaseStatisticsAction')
 }
 
 /**
@@ -291,7 +280,7 @@ export async function getTableDDLAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<string>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
@@ -355,8 +344,6 @@ export async function getTableDDLAction(
       indexCount: indexes.length,
     })
 
-    return serverActionSuccess(ddl)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return ddl
+  }, 'getTableDDLAction')
 }

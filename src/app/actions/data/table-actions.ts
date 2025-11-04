@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import { withServerAction } from '@/lib/utils/try-catch'
 import {
   getProjectTables,
   getTableSchema,
@@ -23,16 +24,12 @@ import type { PrimaryKey, QueryOptions } from '@/types/domain.types'
 export async function getTablesAction(
   projectId: string
 ): Promise<ServerActionResponse<Awaited<ReturnType<typeof getProjectTables>>>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
-    const tables = await getProjectTables(projectId)
-
-    return serverActionSuccess(tables)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return await getProjectTables(projectId)
+  }, 'getTablesAction')
 }
 
 /**
@@ -42,16 +39,12 @@ export async function getTableSchemaAction(
   projectId: string,
   tableName: string
 ): Promise<ServerActionResponse<Awaited<ReturnType<typeof getTableSchema>>>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
-    const schema = await getTableSchema(projectId, tableName)
-
-    return serverActionSuccess(schema)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return await getTableSchema(projectId, tableName)
+  }, 'getTableSchemaAction')
 }
 
 /**
@@ -62,16 +55,12 @@ export async function getTableDataAction(
   tableName: string,
   options?: QueryOptions
 ): Promise<ServerActionResponse<Awaited<ReturnType<typeof introspectTableData>>>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.read')
 
-    const data = await introspectTableData(projectId, tableName, options)
-
-    return serverActionSuccess(data)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return await introspectTableData(projectId, tableName, options)
+  }, 'getTableDataAction')
 }
 
 /**
@@ -82,7 +71,7 @@ export async function createRecordAction(
   tableName: string,
   data: Record<string, unknown>
 ): Promise<ServerActionResponse<Record<string, unknown>>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.create')
 
@@ -92,10 +81,8 @@ export async function createRecordAction(
 
     revalidatePath(`/projects/${projectId}/data/${tableName}`)
 
-    return serverActionSuccess(result, 'Record created successfully')
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return result
+  }, 'createRecordAction')
 }
 
 /**
@@ -108,7 +95,7 @@ export async function updateRecordAction(
   primaryKeyValue: unknown,
   data: Record<string, unknown>
 ): Promise<ServerActionResponse<Record<string, unknown>>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.update')
 
@@ -123,10 +110,8 @@ export async function updateRecordAction(
 
     revalidatePath(`/projects/${projectId}/data/${tableName}`)
 
-    return serverActionSuccess(result, 'Record updated successfully')
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return result
+  }, 'updateRecordAction')
 }
 
 /**
@@ -138,7 +123,7 @@ export async function deleteRecordAction(
   primaryKeyColumn: string,
   primaryKeyValue: unknown
 ): Promise<ServerActionResponse<{ deleted: boolean }>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.delete')
 
@@ -153,10 +138,8 @@ export async function deleteRecordAction(
 
     revalidatePath(`/projects/${projectId}/data/${tableName}`)
 
-    return serverActionSuccess({ deleted: true }, 'Record deleted successfully')
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return { deleted: true }
+  }, 'deleteRecordAction')
 }
 
 /**
@@ -168,7 +151,7 @@ export async function bulkDeleteRecordsAction(
   primaryKeyColumn: string,
   primaryKeyValues: unknown[]
 ): Promise<ServerActionResponse<{ deleted: number }>> {
-  try {
+  return withServerAction(async () => {
     const session = await requireAuth()
     await requireProjectPermission(session.user.id, projectId, 'data.delete')
 
@@ -181,8 +164,6 @@ export async function bulkDeleteRecordsAction(
 
     revalidatePath(`/projects/${projectId}/data/${tableName}`)
 
-    return serverActionSuccess({ deleted: deletedCount }, `${deletedCount} records deleted successfully`)
-  } catch (error) {
-    return serverActionError(error)
-  }
+    return { deleted: deletedCount }
+  }, 'bulkDeleteRecordsAction')
 }

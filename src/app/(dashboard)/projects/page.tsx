@@ -26,21 +26,27 @@ import { toast } from 'sonner'
 import { DeleteProjectDialog } from '@/components/projects/delete-project-dialog'
 import { TestConnectionDialog } from '@/components/projects/test-connection-dialog'
 
-type Project = {
+type UIProject = {
   id: string
   name: string
   slug: string
-  projectType: string
+  projectType: string | null
   description: string | null
   isActive: boolean
   metadata: Record<string, unknown> | null
   createdAt: Date
+  updatedAt: Date
+  status: string
+  databaseUrl: string | null
+  icon: string | null
+  color: string | null
+  logo: string | null
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<UIProject[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [selectedProject, setSelectedProject] = useState<UIProject | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [testConnectionDialogOpen, setTestConnectionDialogOpen] = useState(false)
 
@@ -50,7 +56,24 @@ export default function ProjectsPage() {
       const result = await getAllProjectsAction()
 
       if (result.success && result.data) {
-        setProjects(result.data as Project[])
+        // Transform the ProjectEntity[] to UIProject[] by mapping metadataJson to metadata
+        const transformedProjects = result.data.map(project => ({
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          projectType: project.projectType,
+          description: project.description,
+          isActive: project.status === 'active', // Map status to isActive
+          metadata: project.metadataJson, // Map metadataJson to metadata for UI
+          createdAt: project.createdAt,
+          updatedAt: project.updatedAt,
+          status: project.status,
+          databaseUrl: project.databaseUrl,
+          icon: project.icon,
+          color: project.color,
+          logo: project.logo,
+        }))
+        setProjects(transformedProjects)
       } else {
         toast.error('error' in result ? result.error : 'Failed to load projects')
       }
@@ -66,7 +89,24 @@ export default function ProjectsPage() {
     const result = await getAllProjectsAction()
 
     if (result.success && result.data) {
-      setProjects(result.data as Project[])
+      // Transform the ProjectEntity[] to UIProject[] by mapping metadataJson to metadata
+      const transformedProjects = result.data.map(project => ({
+        id: project.id,
+        name: project.name,
+        slug: project.slug,
+        projectType: project.projectType,
+        description: project.description,
+        isActive: project.status === 'active', // Map status to isActive
+        metadata: project.metadataJson, // Map metadataJson to metadata for UI
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        status: project.status,
+        databaseUrl: project.databaseUrl,
+        icon: project.icon,
+        color: project.color,
+        logo: project.logo,
+      }))
+      setProjects(transformedProjects)
     } else {
       toast.error('error' in result ? result.error : 'Failed to load projects')
     }
@@ -74,12 +114,12 @@ export default function ProjectsPage() {
     setIsLoading(false)
   }
 
-  function handleDelete(project: Project) {
+  function handleDelete(project: UIProject) {
     setSelectedProject(project)
     setDeleteDialogOpen(true)
   }
 
-  function handleTestConnection(project: Project) {
+  function handleTestConnection(project: UIProject) {
     setSelectedProject(project)
     setTestConnectionDialogOpen(true)
   }
@@ -142,13 +182,17 @@ export default function ProjectsPage() {
               </TableHeader>
               <TableBody>
                 {projects.map((project) => {
-                  const metadata = project.metadata as { icon?: string; color?: string } | null
+                  // Type-safe access to metadata properties
+                  const icon = (project.metadata && typeof project.metadata === 'object' && 'icon' in project.metadata) 
+                    ? (project.metadata.icon as string | undefined) 
+                    : undefined;
+                  
                   return (
                     <TableRow key={project.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          {metadata?.icon && (
-                            <span className="text-2xl">{metadata.icon}</span>
+                          {icon && (
+                            <span className="text-2xl">{icon}</span>
                           )}
                           <div>
                             <div className="font-medium">{project.name}</div>

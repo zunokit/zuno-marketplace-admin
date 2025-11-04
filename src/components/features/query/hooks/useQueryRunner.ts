@@ -35,17 +35,13 @@ export function useQueryRunner() {
 
       if (response.success && response.data) {
         const executionTime = Date.now() - startTime
-        const responseData = response.data as {
-          columns: string[]
-          rows: Record<string, unknown>[]
-          rowCount: number
-        }
+        const { columns, rows, rowCount } = response.data // Destructure instead of using type assertion
 
         const queryResult: QueryResult = {
           query: query.trim(),
-          columns: responseData.columns,
-          rows: responseData.rows,
-          rowCount: responseData.rowCount,
+          columns,
+          rows,
+          rowCount,
           executionTime,
           timestamp: new Date(),
         }

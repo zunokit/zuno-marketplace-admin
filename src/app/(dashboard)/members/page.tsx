@@ -161,7 +161,7 @@ export default function MembersPage() {
 
       {/* Dialogs */}
       <InviteUserDialog
-        projectId={activeProject.id}
+        organizationId={activeProject.id}
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={refreshAll}
@@ -170,7 +170,6 @@ export default function MembersPage() {
       {selectedMember && (
         <>
           <UpdateRoleDialog
-            projectId={activeProject.id}
             member={selectedMember}
             open={updateRoleDialogOpen}
             onOpenChange={setUpdateRoleDialogOpen}
@@ -178,7 +177,6 @@ export default function MembersPage() {
           />
 
           <RemoveMemberDialog
-            projectId={activeProject.id}
             member={selectedMember}
             open={removeMemberDialogOpen}
             onOpenChange={setRemoveMemberDialogOpen}

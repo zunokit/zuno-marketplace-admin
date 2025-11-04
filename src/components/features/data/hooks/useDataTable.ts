@@ -61,11 +61,11 @@ export function useDataTable() {
       ])
 
       if (dataResult.success && dataResult.data && schemaResult.success && schemaResult.data) {
-        // Handle the response data - no type assertion needed
-        const responseData = dataResult.data as { rows: Record<string, unknown>[] }
-        const schemaData = schemaResult.data as ColumnInfo[]
+        // Handle the response data - use proper destructuring
+        const { rows } = dataResult.data
+        const schemaData = schemaResult.data
 
-        setTableData(responseData.rows)
+        setTableData(rows)
         setTableSchema(schemaData)
       } else {
         const errorMessage =

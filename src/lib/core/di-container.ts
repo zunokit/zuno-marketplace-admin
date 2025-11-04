@@ -1,8 +1,11 @@
 import { ProjectRepository } from "@/lib/infrastructure/database/repositories/project.repository";
 import { ProjectEnvironmentRepository } from "@/lib/infrastructure/database/repositories/project-environment.repository";
 import { ProjectAuditLogRepository } from "@/lib/infrastructure/database/repositories/project-audit-log.repository";
+import { MemberRepository } from "@/lib/infrastructure/database/repositories/member.repository";
+import { InvitationRepository } from "@/lib/infrastructure/database/repositories/invitation.repository";
 import { EncryptionService } from "@/lib/infrastructure/external/encryption.service";
 import { QueryBuilderService } from "@/lib/core/services/query-builder.service";
+import { getEmailService } from "@/lib/infrastructure/external/email";
 import { CreateProjectUseCase } from "@/lib/core/use-cases/projects/create-project.use-case";
 import { UpdateProjectUseCase } from "@/lib/core/use-cases/projects/update-project.use-case";
 import { DeleteProjectUseCase } from "@/lib/core/use-cases/projects/delete-project.use-case";
@@ -10,6 +13,12 @@ import { GetProjectUseCase } from "@/lib/core/use-cases/projects/get-project.use
 import { ListProjectsUseCase } from "@/lib/core/use-cases/projects/list-projects.use-case";
 import { TestProjectConnectionUseCase } from "@/lib/core/use-cases/projects/test-project-connection.use-case";
 import { GetProjectsRegistryUseCase } from "@/lib/core/use-cases/projects/get-projects-registry.use-case";
+import { GetOrganizationMembersUseCase } from "@/lib/core/use-cases/members/get-organization-members.use-case";
+import { GetOrganizationInvitationsUseCase } from "@/lib/core/use-cases/members/get-organization-invitations.use-case";
+import { InviteUserUseCase } from "@/lib/core/use-cases/members/invite-user.use-case";
+import { UpdateMemberRoleUseCase } from "@/lib/core/use-cases/members/update-member-role.use-case";
+import { RemoveMemberUseCase } from "@/lib/core/use-cases/members/remove-member.use-case";
+import { RevokeInvitationUseCase } from "@/lib/core/use-cases/members/revoke-invitation.use-case";
 
 class DIContainer {
   private static instance: DIContainer;
@@ -17,6 +26,8 @@ class DIContainer {
   private _projectRepository?: ProjectRepository;
   private _projectEnvironmentRepository?: ProjectEnvironmentRepository;
   private _projectAuditLogRepository?: ProjectAuditLogRepository;
+  private _memberRepository?: MemberRepository;
+  private _invitationRepository?: InvitationRepository;
   private _encryptionService?: EncryptionService;
   private _queryBuilderService?: QueryBuilderService;
 
@@ -64,6 +75,20 @@ class DIContainer {
     return this._queryBuilderService;
   }
 
+  get memberRepository(): MemberRepository {
+    if (!this._memberRepository) {
+      this._memberRepository = new MemberRepository();
+    }
+    return this._memberRepository;
+  }
+
+  get invitationRepository(): InvitationRepository {
+    if (!this._invitationRepository) {
+      this._invitationRepository = new InvitationRepository();
+    }
+    return this._invitationRepository;
+  }
+
   createProjectUseCase(): CreateProjectUseCase {
     return new CreateProjectUseCase(
       this.projectRepository,
@@ -107,6 +132,40 @@ class DIContainer {
     return new GetProjectsRegistryUseCase(
       this.projectRepository,
       this.encryptionService
+    );
+  }
+
+  getOrganizationMembersUseCase(): GetOrganizationMembersUseCase {
+    return new GetOrganizationMembersUseCase(this.memberRepository);
+  }
+
+  getOrganizationInvitationsUseCase(): GetOrganizationInvitationsUseCase {
+    return new GetOrganizationInvitationsUseCase(
+      this.memberRepository,
+      this.invitationRepository
+    );
+  }
+
+  inviteUserUseCase(): InviteUserUseCase {
+    return new InviteUserUseCase(
+      this.memberRepository,
+      this.invitationRepository,
+      getEmailService()
+    );
+  }
+
+  updateMemberRoleUseCase(): UpdateMemberRoleUseCase {
+    return new UpdateMemberRoleUseCase(this.memberRepository);
+  }
+
+  removeMemberUseCase(): RemoveMemberUseCase {
+    return new RemoveMemberUseCase(this.memberRepository);
+  }
+
+  revokeInvitationUseCase(): RevokeInvitationUseCase {
+    return new RevokeInvitationUseCase(
+      this.memberRepository,
+      this.invitationRepository
     );
   }
 }
