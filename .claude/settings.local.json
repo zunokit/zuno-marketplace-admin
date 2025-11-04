@@ -19,7 +19,9 @@
       "Bash(dir:*)",
       "Bash(npx shadcn@latest add:*)",
       "WebSearch",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(awk:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
