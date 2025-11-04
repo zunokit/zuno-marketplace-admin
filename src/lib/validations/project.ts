@@ -83,10 +83,20 @@ export const createProjectSchema = z.object({
 
   databaseUrl: z
     .string()
-    .url(VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID)
-    .startsWith(
-      DATABASE_CONFIG.PROTOCOL,
-      VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID_PROTOCOL
+    .trim()
+    .min(1, VALIDATION_MESSAGES.PROJECT.DATABASE_URL.REQUIRED)
+    .refine(
+      (url) => url.startsWith(DATABASE_CONFIG.PROTOCOL),
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID_PROTOCOL }
+    )
+    .refine(
+      (url) => {
+        // Validate PostgreSQL connection string format
+        // Format: postgresql://[user[:password]@][host][:port][/database][?params]
+        const pgUrlRegex = /^postgresql:\/\/([^:@]+)(?::([^@]+))?@([^:/]+)(?::(\d+))?\/([^?]+)(\?.*)?$/;
+        return pgUrlRegex.test(url);
+      },
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID }
     ),
 
   logo: z
@@ -140,8 +150,19 @@ export const updateProjectSchema = z.object({
 
   databaseUrl: z
     .string()
-    .url()
-    .startsWith(DATABASE_CONFIG.PROTOCOL)
+    .trim()
+    .refine(
+      (url) => url.startsWith(DATABASE_CONFIG.PROTOCOL),
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID_PROTOCOL }
+    )
+    .refine(
+      (url) => {
+        // Validate PostgreSQL connection string format
+        const pgUrlRegex = /^postgresql:\/\/([^:@]+)(?::([^@]+))?@([^:/]+)(?::(\d+))?\/([^?]+)(\?.*)?$/;
+        return pgUrlRegex.test(url);
+      },
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID }
+    )
     .optional(),
 
   logo: z.string().url().optional().nullable(),
@@ -189,8 +210,19 @@ export const updateProjectFormSchema = z.object({
 
   databaseUrl: z
     .string()
-    .url()
-    .startsWith(DATABASE_CONFIG.PROTOCOL)
+    .trim()
+    .refine(
+      (url) => url.startsWith(DATABASE_CONFIG.PROTOCOL),
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID_PROTOCOL }
+    )
+    .refine(
+      (url) => {
+        // Validate PostgreSQL connection string format
+        const pgUrlRegex = /^postgresql:\/\/([^:@]+)(?::([^@]+))?@([^:/]+)(?::(\d+))?\/([^?]+)(\?.*)?$/;
+        return pgUrlRegex.test(url);
+      },
+      { message: VALIDATION_MESSAGES.PROJECT.DATABASE_URL.INVALID }
+    )
     .optional(),
 
   logo: z.string().url().optional().nullable(),

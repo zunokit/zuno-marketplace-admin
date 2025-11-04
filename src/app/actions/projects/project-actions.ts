@@ -174,7 +174,7 @@ export async function getProjectsRegistryAction(): Promise<ServerActionResponse>
 }
 
 export async function testProjectConnectionAction(
-  databaseUrl: string
+  projectId: string
 ): Promise<ServerActionResponse> {
   try {
     const session = await requireAuth();
@@ -185,7 +185,7 @@ export async function testProjectConnectionAction(
     }
 
     const testProjectConnectionUseCase = container.testProjectConnectionUseCase();
-    const result = await testProjectConnectionUseCase.execute(databaseUrl, session.user.id);
+    const result = await testProjectConnectionUseCase.execute(projectId, session.user.id);
 
     return serverActionSuccess(result);
   } catch (error) {
