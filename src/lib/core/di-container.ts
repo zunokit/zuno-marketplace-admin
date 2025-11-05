@@ -20,6 +20,8 @@ import { InviteUserUseCase } from "@/lib/core/use-cases/members/invite-user.use-
 import { UpdateMemberRoleUseCase } from "@/lib/core/use-cases/members/update-member-role.use-case";
 import { RemoveMemberUseCase } from "@/lib/core/use-cases/members/remove-member.use-case";
 import { RevokeInvitationUseCase } from "@/lib/core/use-cases/members/revoke-invitation.use-case";
+import { AcceptInvitationUseCase } from "@/lib/core/use-cases/members/accept-invitation.use-case";
+import { GetInvitationDetailsUseCase } from "@/lib/core/use-cases/members/get-invitation-details.use-case";
 import { ExecuteQueryUseCase } from "@/lib/core/use-cases/queries/execute-query.use-case";
 import { SaveQueryUseCase } from "@/lib/core/use-cases/queries/save-query.use-case";
 
@@ -186,6 +188,17 @@ class DIContainer {
 
   saveQueryUseCase(): SaveQueryUseCase {
     return new SaveQueryUseCase(this.queryRepository);
+  }
+
+  acceptInvitationUseCase(): AcceptInvitationUseCase {
+    return new AcceptInvitationUseCase(
+      this.memberRepository,
+      this.invitationRepository
+    );
+  }
+
+  getInvitationDetailsUseCase(): GetInvitationDetailsUseCase {
+    return new GetInvitationDetailsUseCase(this.invitationRepository);
   }
 }
 

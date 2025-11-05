@@ -25,38 +25,25 @@ import {
 } from '@/lib/db/introspection'
 import { logger } from '@/lib/utils/logger'
 
-// Re-export types for use in components
-export type { TableMetadata, TableConstraint, TableIndex, TableDependency, DatabaseStatistics }
+// Import types and re-export
+import type {
+  TableSchemaInfo,
+  SchemaRelationship,
+  CompleteSchemaInfo,
+  ColumnInfo,
+} from '@/types/schema.types'
 
-export type TableSchemaInfo = {
-  tableName: string
-  schemaName: string
-  rowCount: number
-  columns: {
-    columnName: string
-    dataType: string
-    isNullable: boolean
-    defaultValue: string | null
-    isPrimaryKey: boolean
-    isForeignKey: boolean
-    foreignKeyTable: string | null
-    foreignKeyColumn: string | null
-    enumValues: string[] | null
-  }[]
-}
+// Re-export types from introspection (these match database structure)
+export type {
+  TableMetadata,
+  TableConstraint,
+  TableIndex,
+  TableDependency,
+  DatabaseStatistics,
+} from '@/lib/db/introspection'
 
-export type SchemaRelationship = {
-  sourceTable: string
-  sourceColumn: string
-  targetTable: string
-  targetColumn: string
-  relationshipType: 'one-to-many' | 'many-to-one' | 'one-to-one'
-}
-
-export type CompleteSchemaInfo = {
-  tables: TableSchemaInfo[]
-  relationships: SchemaRelationship[]
-}
+// Re-export schema types
+export type { TableSchemaInfo, SchemaRelationship, CompleteSchemaInfo, ColumnInfo }
 
 /**
  * Get complete database schema including all tables, columns, and relationships

@@ -345,9 +345,9 @@ export const projectAuditLogSchema = z.object({
   ]),
   entityType: z.enum(['project', 'environment', 'member']),
   entityId: z.string().min(1, VALIDATION_MESSAGES.AUDIT.ENTITY_ID.REQUIRED),
-  oldValues: z.any().optional(),
-  newValues: z.any().optional(),
-  metadata: z.any().optional(),
+  oldValues: z.record(z.string(), z.unknown()).optional(),
+  newValues: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   ipAddress: z.string().optional(),
   userAgent: z.string().optional(),
 });

@@ -5,6 +5,7 @@ import { logger } from '@/lib/utils/logger'
 import { db } from '@/lib/db'
 import { user } from '@/lib/infrastructure/database/schemas'
 import { eq } from 'drizzle-orm'
+import { isDevelopment } from '@/lib/utils/environment'
 
 interface SignUpData {
   name: string
@@ -53,7 +54,7 @@ export async function signUpWithRole(
     }
 
     // In development mode, automatically assign super_admin role
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDevelopment()) {
       try {
         // Update user role directly in database using Drizzle
         await db
