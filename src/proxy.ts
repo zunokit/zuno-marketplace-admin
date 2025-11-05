@@ -10,7 +10,7 @@ import { auth } from './src/lib/auth/config'
  * Middleware configuration
  * Runs on all routes except static assets and API auth routes
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Skip middleware for static assets and Next.js internals
