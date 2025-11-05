@@ -8,7 +8,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useActiveProject } from '@/components/providers/project-provider'
 import { getCompleteSchemaAction, type CompleteSchemaInfo, type TableSchemaInfo } from '@/app/actions/schema/schema-actions'
-import { SchemaGraph } from '@/components/schema/schema-graph'
+import { SchemaGraph } from '@/components/schema/schema-graph-dynamic'
 import {
   Card,
   CardContent,
