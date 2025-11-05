@@ -26,6 +26,7 @@
  */
 
 import { isDevelopment } from './environment'
+import { logger } from './logger'
 
 /**
  * Base application error class
@@ -141,5 +142,39 @@ export function sanitizeError(error: unknown): {
   return {
     message: 'An unexpected error occurred',
     statusCode: 500,
+  }
+}
+
+/**
+ * Generic error handler wrapper for async operations
+ * Executes operation and logs errors, but throws instead of returning TryResult
+ * Use this when you want to handle errors at a higher level
+ *
+ * @param operation - Async function to execute
+ * @param context - Context string for logging
+ * @returns The result of the operation (throws on error)
+ *
+ * @example
+ * ```typescript
+ * const data = await errorHandler(async () => {
+ *   return await fetchData()
+ * }, 'fetchData')
+ * // Returns data directly, or throws error
+ * ```
+ */
+export async function errorHandler<T>(
+  operation: () => Promise<T>,
+  context?: string
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    // Log the error with context
+    logger.error(
+      `Operation failed${context ? ` in ${context}` : ''}`,
+      error instanceof Error ? error : String(error)
+    )
+    // Re-throw the error for caller to handle
+    throw error
   }
 }

@@ -62,7 +62,7 @@ export async function checkProjectPermission(
     }
   )
 
-  return result.data
+  return result.data ?? false
 }
 
 /**
@@ -121,7 +121,7 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     }
   )
 
-  return result.data
+  return result.data ?? false
 }
 
 /**
@@ -161,7 +161,7 @@ export async function getUserProjectRole(
     }
   )
 
-  return result.data
+  return result.data ?? null
 }
 
 /**
@@ -241,5 +241,5 @@ export async function checkAdminPermission(
     }
   )
 
-  return result.data
+  return result.data ?? false
 }

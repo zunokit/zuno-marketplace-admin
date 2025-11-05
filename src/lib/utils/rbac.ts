@@ -35,7 +35,7 @@
 
 import { db } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { member as memberTable } from '@/lib/infrastructure/database/schemas'
+import { member as memberTable, user as userTable } from '@/lib/infrastructure/database/schemas'
 import type { ProjectPermission, ProjectRole } from '@/types/domain.types'
 import { ROLE_PERMISSIONS } from '@/types/domain.types'
 import {
@@ -119,7 +119,7 @@ class RBACService {
       }
     )
 
-    return result.data
+    return result.data ?? false
   }
 
   /**
@@ -166,7 +166,7 @@ class RBACService {
     const result = await withErrorHandling(
       async () => {
         const user = await db.query.user.findFirst({
-          where: eq(db.query.user.id, userId),
+          where: eq(userTable.id, userId),
         })
 
         if (!user) return false
@@ -187,7 +187,7 @@ class RBACService {
       }
     )
 
-    return result.data
+    return result.data ?? false
   }
 
   /**
@@ -281,7 +281,7 @@ class RBACService {
       }
     )
 
-    return result.data
+    return result.data ?? []
   }
 
   /**
@@ -340,7 +340,7 @@ class RBACService {
       }
     )
 
-    return result.data
+    return result.data ?? false
   }
 }
 
@@ -561,7 +561,7 @@ export const PermissionUtils = {
       }
     )
 
-    return result.data
+    return result.data ?? null
   },
 
   /**
