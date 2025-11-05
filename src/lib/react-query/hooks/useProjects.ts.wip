@@ -1,0 +1,160 @@
+/**
+ * useProjects Hook
+ * React Query hooks for project management with optimized caching
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { queryKeys, staleTimeConfig, gcTimeConfig } from '../config'
+import {
+  getProjectsAction,
+  getProjectByIdAction,
+  createProjectAction,
+  updateProjectAction,
+  deleteProjectAction,
+} from '@/app/actions/projects/project-actions'
+import { toast } from 'sonner'
+
+/**
+ * Fetch all projects with caching
+ */
+export function useProjects() {
+  return useQuery({
+    queryKey: queryKeys.projects.lists(),
+    queryFn: async () => {
+      const result = await getProjectsAction()
+      if (result.success && result.data) {
+        return result.data
+      }
+      throw new Error('error' in result ? result.error : 'Failed to fetch projects')
+    },
+    staleTime: staleTimeConfig.normal, // 5 minutes
+    gcTime: gcTimeConfig.long, // 30 minutes - keep projects list in cache
+  })
+}
+
+/**
+ * Fetch single project by ID with caching
+ */
+export function useProject(projectId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.projects.detail(projectId || ''),
+    queryFn: async () => {
+      if (!projectId) throw new Error('Project ID is required')
+      const result = await getProjectByIdAction(projectId)
+      if (result.success && result.data) {
+        return result.data
+      }
+      throw new Error('error' in result ? result.error : 'Failed to fetch project')
+    },
+    enabled: !!projectId, // Only fetch if projectId is provided
+    staleTime: staleTimeConfig.normal,
+    gcTime: gcTimeConfig.long,
+  })
+}
+
+/**
+ * Create project mutation with cache invalidation
+ */
+export function useCreateProject() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: Parameters<typeof createProjectAction>[0]) => {
+      const result = await createProjectAction(data)
+      if (result.success && result.data) {
+        return result.data
+      }
+      throw new Error('error' in result ? result.error : 'Failed to create project')
+    },
+    onSuccess: (newProject) => {
+      // Invalidate projects list to refetch with new project
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() })
+
+      // Optionally: Add optimistic update by setting query data directly
+      queryClient.setQueryData(queryKeys.projects.detail(newProject.id), newProject)
+
+      toast.success('Project created successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create project')
+    },
+  })
+}
+
+/**
+ * Update project mutation with cache invalidation
+ */
+export function useUpdateProject() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: Parameters<typeof updateProjectAction>[0]) => {
+      const result = await updateProjectAction(data)
+      if (result.success && result.data) {
+        return result.data
+      }
+      throw new Error('error' in result ? result.error : 'Failed to update project')
+    },
+    onSuccess: (updatedProject) => {
+      // Invalidate both list and detail queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(updatedProject.id) })
+
+      toast.success('Project updated successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update project')
+    },
+  })
+}
+
+/**
+ * Delete project mutation with cache invalidation
+ */
+export function useDeleteProject() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (projectId: string) => {
+      const result = await deleteProjectAction(projectId)
+      if (result.success) {
+        return projectId
+      }
+      throw new Error('error' in result ? result.error : 'Failed to delete project')
+    },
+    onSuccess: (deletedProjectId) => {
+      // Invalidate projects list
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() })
+
+      // Remove project detail from cache
+      queryClient.removeQueries({ queryKey: queryKeys.projects.detail(deletedProjectId) })
+
+      toast.success('Project deleted successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete project')
+    },
+  })
+}
+
+/**
+ * Prefetch project details
+ * Useful for hover states or predictive loading
+ */
+export function usePrefetchProject() {
+  const queryClient = useQueryClient()
+
+  return (projectId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.projects.detail(projectId),
+      queryFn: async () => {
+        const result = await getProjectByIdAction(projectId)
+        if (result.success && result.data) {
+          return result.data
+        }
+        throw new Error('error' in result ? result.error : 'Failed to fetch project')
+      },
+      staleTime: staleTimeConfig.normal,
+    })
+  }
+}
