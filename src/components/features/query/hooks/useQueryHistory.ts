@@ -16,7 +16,9 @@ export function useQueryHistory(projectId: string | null) {
   useEffect(() => {
     if (!projectId) {
       currentProjectIdRef.current = null
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: clearing state on project change
       setHistory([])
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: clearing state on project change
       setSavedQueries([])
       return
     }
