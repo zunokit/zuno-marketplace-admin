@@ -7,8 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react'
-import { Edit, Trash2, Database, Table as TableIcon, RefreshCw, Plus } from 'lucide-react'
-import type { ColumnDef } from '@tanstack/react-table'
+import { Database, Table as TableIcon, RefreshCw, Plus } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -18,15 +17,12 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable } from '@/components/data/data-table'
-import { DataTableColumnHeader } from '@/components/data/data-table-column-header'
-import { DataTableRowActions, type RowAction } from '@/components/data/data-table-row-actions'
 import { CreateRecordDialog } from '@/components/data/create-record-dialog'
 import { EditRecordDialog } from '@/components/data/edit-record-dialog'
 import { DeleteRecordDialog } from '@/components/data/delete-record-dialog'
 import { useDataTable } from '@/components/features/data/hooks/useDataTable'
-import type { ColumnInfo } from '@/types/api.types'
+import { useDataBrowserColumns } from '@/components/features/data/components/DataBrowserColumns'
 
 export default function DataBrowserPage() {
   const {
@@ -56,52 +52,12 @@ export default function DataBrowserPage() {
     setDeleteDialogOpen(true)
   }, [])
 
-  // Generate table columns from schema
-  const columns = useMemo((): ColumnDef<Record<string, unknown>>[] => {
-    if (tableSchema.length === 0) return []
-
-    return [
-      ...tableSchema.map((col): ColumnDef<Record<string, unknown>> => ({
-        accessorKey: col.columnName,
-        header: ({ column }) => <DataTableColumnHeader column={column} title={col.columnName} />,
-        cell: ({ row }) => {
-          const value = row.getValue(col.columnName)
-          if (value === null || value === undefined) {
-            return <span className="text-muted-foreground">NULL</span>
-          }
-          if (typeof value === 'object') {
-            return <code className="text-xs">{JSON.stringify(value)}</code>
-          }
-          if (typeof value === 'boolean') {
-            return (
-              <Badge variant={value ? 'default' : 'secondary'}>{value.toString()}</Badge>
-            )
-          }
-          return <div className="max-w-[500px] truncate">{String(value)}</div>
-        },
-      })),
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          const actions: RowAction<Record<string, unknown>>[] = [
-            {
-              label: 'Edit',
-              icon: <Edit className="h-4 w-4" />,
-              onClick: () => handleEdit(row.original),
-            },
-            {
-              label: 'Delete',
-              icon: <Trash2 className="h-4 w-4" />,
-              onClick: () => handleDelete(row.original),
-              variant: 'destructive',
-              separator: true,
-            },
-          ]
-          return <DataTableRowActions row={row} actions={actions} />
-        },
-      },
-    ]
-  }, [tableSchema, handleEdit, handleDelete])
+  // Generate table columns from schema using custom hook
+  const columns = useDataBrowserColumns({
+    tableSchema,
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+  })
 
   // Convert ColumnInfo to FieldSchema for dialogs
   const fieldSchema = useMemo(

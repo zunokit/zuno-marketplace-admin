@@ -11,7 +11,7 @@ import {
   revokeInvitationAction,
 } from '@/app/actions/members/member-actions'
 import { toast } from 'sonner'
-import type { Member, Invitation } from '../types'
+import type { Member, Invitation } from '@/types/features/members.types'
 
 export function useMembers() {
   const { activeProject } = useActiveProject()

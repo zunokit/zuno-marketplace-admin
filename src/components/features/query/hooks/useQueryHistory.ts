@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { QueryResult, SavedQuery } from '../types'
-import { QUERY_HISTORY_KEY, SAVED_QUERIES_KEY, MAX_HISTORY_ITEMS } from '../types'
+import type { QueryResult, SavedQuery } from '@/types/features/query.types'
+import { QUERY_HISTORY_KEY, SAVED_QUERIES_KEY, MAX_HISTORY_ITEMS } from '@/types/features/query.types'
 
 export function useQueryHistory(projectId: string | null) {
   const [history, setHistory] = useState<QueryResult[]>([])

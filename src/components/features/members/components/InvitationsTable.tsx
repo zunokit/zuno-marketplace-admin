@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table'
 import { Crown, Shield, Edit as EditIcon, Eye, XCircle, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import type { Invitation } from '../types'
+import type { Invitation } from '@/types/features/members.types'
 import type { ProjectRole } from '@/types/domain.types'
 
 const roleIcons: Record<ProjectRole, React.ReactNode> = {

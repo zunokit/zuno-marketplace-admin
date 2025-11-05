@@ -11,7 +11,7 @@ import {
   getTableSchemaAction,
 } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
-import type { TableInfo } from '../types'
+import type { TableInfo } from '@/types/features/data.types'
 import type { ColumnInfo, TableDataResponse } from '@/types/api.types'
 
 export function useDataTable() {

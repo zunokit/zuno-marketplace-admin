@@ -25,23 +25,7 @@ import { Plus, Edit, Trash2, Database, CheckCircle2, XCircle } from 'lucide-reac
 import { toast } from 'sonner'
 import { DeleteProjectDialog } from '@/components/projects/delete-project-dialog'
 import { TestConnectionDialog } from '@/components/projects/test-connection-dialog'
-
-type UIProject = {
-  id: string
-  name: string
-  slug: string
-  projectType: string | null
-  description: string | null
-  isActive: boolean
-  metadata: Record<string, unknown> | null
-  createdAt: Date
-  updatedAt: Date
-  status: string
-  databaseUrl: string | null
-  icon: string | null
-  color: string | null
-  logo: string | null
-}
+import type { UIProject } from '@/types/ui.types'
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<UIProject[]>([])
@@ -49,40 +33,6 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<UIProject | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [testConnectionDialogOpen, setTestConnectionDialogOpen] = useState(false)
-
-  useEffect(() => {
-    async function loadProjects() {
-      setIsLoading(true)
-      const result = await getAllProjectsAction()
-
-      if (result.success && result.data) {
-        // Transform the ProjectEntity[] to UIProject[] by mapping metadataJson to metadata
-        const transformedProjects = result.data.map(project => ({
-          id: project.id,
-          name: project.name,
-          slug: project.slug,
-          projectType: project.projectType,
-          description: project.description,
-          isActive: project.status === 'active', // Map status to isActive
-          metadata: project.metadataJson, // Map metadataJson to metadata for UI
-          createdAt: project.createdAt,
-          updatedAt: project.updatedAt,
-          status: project.status,
-          databaseUrl: project.databaseUrl,
-          icon: project.icon,
-          color: project.color,
-          logo: project.logo,
-        }))
-        setProjects(transformedProjects)
-      } else {
-        toast.error('error' in result ? result.error : 'Failed to load projects')
-      }
-
-      setIsLoading(false)
-    }
-
-    loadProjects()
-  }, [])
 
   async function loadProjects() {
     setIsLoading(true)
@@ -113,6 +63,11 @@ export default function ProjectsPage() {
 
     setIsLoading(false)
   }
+
+  useEffect(() => {
+    loadProjects()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleDelete(project: UIProject) {
     setSelectedProject(project)

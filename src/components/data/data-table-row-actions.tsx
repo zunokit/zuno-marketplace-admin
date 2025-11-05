@@ -15,14 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-export interface RowAction<TData> {
-  label: string
-  icon?: React.ReactNode
-  onClick: (row: Row<TData>) => void
-  variant?: 'default' | 'destructive'
-  separator?: boolean
-}
+import type { RowAction } from '@/types/ui.types'
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -45,22 +38,26 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        {actions.map((action, index) => (
-          <div key={index}>
-            {action.separator && <DropdownMenuSeparator />}
-            <DropdownMenuItem
-              onClick={() => action.onClick(row)}
-              className={
-                action.variant === 'destructive'
-                  ? 'text-destructive focus:text-destructive'
-                  : ''
-              }
-            >
-              {action.icon && <span className="mr-2">{action.icon}</span>}
-              {action.label}
-            </DropdownMenuItem>
-          </div>
-        ))}
+        {actions.map((action, index) => {
+          const isDisabled = action.disabled ? action.disabled(row.original) : false
+          return (
+            <div key={index}>
+              {action.separator && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                onClick={() => !isDisabled && action.onClick(row.original)}
+                disabled={isDisabled}
+                className={
+                  action.variant === 'destructive'
+                    ? 'text-destructive focus:text-destructive'
+                    : ''
+                }
+              >
+                {action.icon && <span className="mr-2">{action.icon}</span>}
+                {action.label}
+              </DropdownMenuItem>
+            </div>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -34,7 +34,7 @@ import { SqlEditor } from '@/components/query/sql-editor'
 import { QueryResults, exportToCsv, exportToJson } from '@/components/query/query-results'
 import { useQueryRunner } from '@/components/features/query/hooks/useQueryRunner'
 import { useQueryHistory } from '@/components/features/query/hooks/useQueryHistory'
-import type { SavedQuery } from '@/components/features/query/types'
+import type { SavedQuery } from '@/types/features/query.types'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function QueryPage() {
