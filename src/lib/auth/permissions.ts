@@ -11,8 +11,8 @@ import { auth } from './config'
 import { db } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { member as memberTable, user as userTable } from '@/lib/infrastructure/database/schemas'
-import type { ProjectPermission, ProjectRole } from '@/types/projects'
-import { ROLE_PERMISSIONS } from '@/types/projects'
+import type { ProjectPermission, ProjectRole } from '@/types/domain.types'
+import { ROLE_PERMISSIONS } from '@/types/domain.types'
 import { withErrorHandling } from '@/lib/utils/try-catch'
 
 /**
