@@ -41,4 +41,4 @@ yarn-error.log*
 next-env.d.ts
 pnpm-lock.yaml
 !.env.example
-.provider.txt
+.provider.txtpackage-lock.json
