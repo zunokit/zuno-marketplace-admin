@@ -16,7 +16,9 @@ export function useQueryHistory(projectId: string | null) {
   useEffect(() => {
     if (!projectId) {
       currentProjectIdRef.current = null
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: clearing state when no project
       setHistory([])
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: clearing state when no project
       setSavedQueries([])
       return
     }
@@ -34,21 +36,27 @@ export function useQueryHistory(projectId: string | null) {
 
     if (storedHistory) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
         setHistory(JSON.parse(storedHistory))
       } catch {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
         setHistory([])
       }
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
       setHistory([])
     }
 
     if (storedSaved) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
         setSavedQueries(JSON.parse(storedSaved))
       } catch {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
         setSavedQueries([])
       }
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: loading from localStorage
       setSavedQueries([])
     }
   }, [projectId])

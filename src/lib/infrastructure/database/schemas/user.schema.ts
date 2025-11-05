@@ -72,6 +72,13 @@ export const session = pgTable(
       columns: [table.activeOrganizationId],
       foreignColumns: [organization.id],
     }).onDelete("set null"),
+    // Performance indexes for session lookups
+    userIdIdx: index("session_user_id_idx").on(table.userId),
+    tokenIdx: index("session_token_idx").on(table.token),
+    expiresAtIdx: index("session_expires_at_idx").on(table.expiresAt),
+    userExpiresIdx: index("session_user_expires_idx").on(table.userId, table.expiresAt),
+    activeOrgIdx: index("session_active_org_idx").on(table.activeOrganizationId),
+    createdAtIdx: index("session_created_at_idx").on(table.createdAt),
   })
 ).enableRLS();
 
@@ -102,23 +109,41 @@ export const account = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
     }).onDelete("cascade"),
+    // Performance indexes for account lookups
+    userIdIdx: index("account_user_id_idx").on(table.userId),
+    providerIdIdx: index("account_provider_id_idx").on(table.providerId),
+    accountIdIdx: index("account_account_id_idx").on(table.accountId),
+    userProviderIdx: index("account_user_provider_idx").on(table.userId, table.providerId),
+    accessTokenExpiresIdx: index("account_access_token_expires_idx").on(table.accessTokenExpiresAt),
+    refreshTokenExpiresIdx: index("account_refresh_token_expires_idx").on(table.refreshTokenExpiresAt),
   })
 ).enableRLS();
 
 /**
  * Verification table for email verification, password reset tokens, etc.
  */
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}).enableRLS();
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => ({
+    // Performance indexes for verification lookups
+    identifierIdx: index("verification_identifier_idx").on(table.identifier),
+    valueIdx: index("verification_value_idx").on(table.value),
+    expiresAtIdx: index("verification_expires_at_idx").on(table.expiresAt),
+    identifierExpiresIdx: index("verification_identifier_expires_idx").on(table.identifier, table.expiresAt),
+    createdAtIdx: index("verification_created_at_idx").on(table.createdAt),
+  })
+).enableRLS();
 
 export type User = typeof user.$inferSelect;
 export type NewUser = typeof user.$inferInsert;

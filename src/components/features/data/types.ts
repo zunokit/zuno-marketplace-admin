@@ -11,9 +11,7 @@ export interface TableInfo {
   rowCount: number
 }
 
-export interface TableColumn extends ColumnInfo {
-  // Extended column info if needed
-}
+export type TableColumn = ColumnInfo
 
 export interface DataTableState {
   selectedTable: string | null

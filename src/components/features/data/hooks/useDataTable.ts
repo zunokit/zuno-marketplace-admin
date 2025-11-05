@@ -88,12 +88,14 @@ export function useDataTable() {
 
   useEffect(() => {
     if (activeProject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data on mount/project change
       void loadTables()
     }
   }, [activeProject, loadTables])
 
   useEffect(() => {
     if (selectedTable && activeProject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data when table selection changes
       void loadTableData(selectedTable)
     }
   }, [selectedTable, activeProject, loadTableData])

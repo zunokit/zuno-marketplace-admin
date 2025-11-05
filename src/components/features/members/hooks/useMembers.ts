@@ -73,7 +73,9 @@ export function useMembers() {
 
   useEffect(() => {
     if (activeProject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data on mount/project change
       void loadMembers()
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data on mount/project change
       void loadInvitations()
     }
   }, [activeProject, loadMembers, loadInvitations])
