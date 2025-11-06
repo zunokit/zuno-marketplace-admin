@@ -3,6 +3,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization, admin } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/infrastructure/database/schemas";
+import { getEmailService } from "@/lib/infrastructure/external/email";
+import { invitationEmailTemplate } from "@/lib/infrastructure/external/email/templates";
+import { logger } from "@/lib/utils/logger";
 
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is not defined");
@@ -46,11 +49,44 @@ export const auth = betterAuth({
         // Only super admins can create projects
         return user.role?.includes("super_admin") || false;
       },
-      // Send invitation email (you can customize this)
+      // Send invitation email via integrated email service
       async sendInvitationEmail(data) {
-        console.log("Invitation email:", data);
-        // TODO: Implement email sending (e.g., with Resend, SendGrid, etc.)
-        // For now, just log the invitation
+        try {
+          const emailService = getEmailService();
+
+          // Better Auth provides: { email, organizationName, inviterName, link }
+          const { html, text, subject } = invitationEmailTemplate({
+            inviterName: data.inviterName || "Team Admin",
+            organizationName: data.organizationName,
+            role: "member", // Better Auth doesn't provide role in invitation data
+            invitationUrl: data.link,
+            expiresInDays: 7,
+          });
+
+          const result = await emailService.send({
+            to: data.email,
+            subject,
+            html,
+            text,
+          });
+
+          if (!result.success) {
+            logger.error("Failed to send Better Auth invitation email", result.error, {
+              email: data.email,
+              organizationName: data.organizationName,
+            });
+            throw new Error("Failed to send invitation email");
+          }
+
+          logger.info("Better Auth invitation email sent successfully", {
+            email: data.email,
+            organizationName: data.organizationName,
+            messageId: result.messageId,
+          });
+        } catch (error) {
+          logger.error("Error in sendInvitationEmail", error);
+          throw error;
+        }
       },
     }),
     admin({
