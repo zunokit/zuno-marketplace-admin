@@ -16,7 +16,7 @@ type SqlEditorProps = {
   readOnly?: boolean
 }
 
-export function SqlEditor({ value, onChange, height = '300px', readOnly = false }: SqlEditorProps) {
+export function SqlEditorCore({ value, onChange, height = '300px', readOnly = false }: SqlEditorProps) {
   const { theme } = useTheme()
 
   return (

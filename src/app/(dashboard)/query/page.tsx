@@ -30,7 +30,7 @@ import {
 import { Play, History, Save, Trash2, Clock, FileCode, Loader2, AlertCircle, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { SqlEditor } from '@/components/query/sql-editor'
+import { SqlEditor } from '@/components/query/sql-editor-dynamic'
 import { QueryResults, exportToCsv, exportToJson } from '@/components/query/query-results'
 import { useQueryRunner } from '@/components/features/query/hooks/useQueryRunner'
 import { useQueryHistory } from '@/components/features/query/hooks/useQueryHistory'
