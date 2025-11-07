@@ -21,7 +21,12 @@
       "WebSearch",
       "Bash(pnpm build:*)",
       "Bash(awk:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

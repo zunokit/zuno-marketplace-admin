@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { ProjectEntity } from '@/lib/core/domain/entities/project.entity'
 
 type PageProps = {
   params: Promise<{ id: string }>

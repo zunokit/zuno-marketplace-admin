@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Crown, Shield, Edit as EditIcon, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import type { Member } from '../types'
+import type { Member } from '@/types/features/members.types'
 import type { ProjectRole } from '@/types/domain.types'
 
 const roleIcons: Record<ProjectRole, React.ReactNode> = {
