@@ -57,7 +57,7 @@ export interface UpdateProjectRequest {
   slug?: string
 }
 
-export interface UpdateProjectResponse extends CreateProjectResponse {}
+export type UpdateProjectResponse = CreateProjectResponse
 
 export interface ProjectListItem {
   id: string
