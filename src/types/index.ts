@@ -15,5 +15,5 @@ export * from './ui.types'
 // Database types
 export * from './database.types'
 
-// Legacy type exports (for backward compatibility during migration)
-export type { ProjectRole, ProjectPermission, ProjectMember, ProjectInvitation } from './projects'
+// Schema types
+export * from './schema.types'

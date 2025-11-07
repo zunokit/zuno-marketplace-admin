@@ -5,7 +5,6 @@ import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import './globals.css'
 
-// Temporarily disabled due to network restrictions in build environment
 // const geistSans = Geist({
 //   variable: '--font-geist-sans',
 //   subsets: ['latin'],

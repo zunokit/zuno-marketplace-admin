@@ -3,17 +3,13 @@
  * Types specific to the data management feature
  */
 
-import type { ColumnInfo } from '@/types/api.types'
+import type { ColumnInfo, TableInfo } from '@/types/api.types'
 
-export interface TableInfo {
-  name: string
-  schema: string
-  rowCount: number
-}
+// Extended column info if needed in the future
+export type TableColumn = ColumnInfo
 
-export interface TableColumn extends ColumnInfo {
-  // Extended column info if needed
-}
+// Re-export commonly used types
+export type { TableInfo, ColumnInfo }
 
 export interface DataTableState {
   selectedTable: string | null
