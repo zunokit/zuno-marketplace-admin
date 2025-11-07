@@ -24,7 +24,7 @@ import { RemoveMemberDialog } from '@/components/members/remove-member-dialog'
 import { useMembers } from '@/components/features/members/hooks/useMembers'
 import { MembersTable } from '@/components/features/members/components/MembersTable'
 import { InvitationsTable } from '@/components/features/members/components/InvitationsTable'
-import type { Member } from '@/components/features/members/types'
+import type { Member } from '@/types/features/members.types'
 
 export default function MembersPage() {
   const {

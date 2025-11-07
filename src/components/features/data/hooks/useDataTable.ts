@@ -11,7 +11,7 @@ import {
   getTableSchemaAction,
 } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
-import type { TableInfo } from '../types'
+import type { TableInfo } from '@/types/features/data.types'
 import type { ColumnInfo, TableDataResponse } from '@/types/api.types'
 
 export function useDataTable() {
@@ -86,16 +86,18 @@ export function useDataTable() {
     }
   }, [selectedTable, loadTableData])
 
+  // Load tables when project changes - data fetching pattern
   useEffect(() => {
     if (activeProject) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data on mount/project change
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadTables()
     }
   }, [activeProject, loadTables])
 
+  // Load table data when table selection changes - data fetching pattern
   useEffect(() => {
     if (selectedTable && activeProject) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: fetching data when table selection changes
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadTableData(selectedTable)
     }
   }, [selectedTable, activeProject, loadTableData])

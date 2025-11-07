@@ -87,11 +87,11 @@ export default function AcceptInvitationContent({ searchParams }: AcceptInvitati
     setIsLoading(false)
   }, [invitationId])
 
+  // Load invitation details on mount - data fetching pattern
   useEffect(() => {
     if (!invitationId || !token) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: initial validation
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('Invalid invitation link')
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Valid pattern: initial validation
       setIsLoading(false)
       return
     }
