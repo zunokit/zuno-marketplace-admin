@@ -54,12 +54,18 @@ export const auth = betterAuth({
         try {
           const emailService = getEmailService();
 
-          // Better Auth provides: { email, organizationName, inviterName, link }
+          // Extract organization name and inviter name from Better Auth data structure
+          const organizationName = data.organization?.name || "Organization";
+          const inviterName = data.inviter?.user?.name || data.inviter?.user?.email || "Team Admin";
+          // Build invitation URL from environment
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const invitationUrl = `${baseUrl}/invite/accept?id=${data.invitation.id}`;
+
           const { html, text, subject } = invitationEmailTemplate({
-            inviterName: data.inviterName || "Team Admin",
-            organizationName: data.organizationName,
-            role: "member", // Better Auth doesn't provide role in invitation data
-            invitationUrl: data.link,
+            inviterName,
+            organizationName,
+            role: data.role || "member",
+            invitationUrl,
             expiresInDays: 7,
           });
 
@@ -73,14 +79,14 @@ export const auth = betterAuth({
           if (!result.success) {
             logger.error("Failed to send Better Auth invitation email", result.error, {
               email: data.email,
-              organizationName: data.organizationName,
+              organizationName,
             });
             throw new Error("Failed to send invitation email");
           }
 
           logger.info("Better Auth invitation email sent successfully", {
             email: data.email,
-            organizationName: data.organizationName,
+            organizationName,
             messageId: result.messageId,
           });
         } catch (error) {
