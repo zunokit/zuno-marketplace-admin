@@ -86,14 +86,18 @@ export function useDataTable() {
     }
   }, [selectedTable, loadTableData])
 
+  // Load tables when project changes - data fetching pattern
   useEffect(() => {
     if (activeProject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadTables()
     }
   }, [activeProject, loadTables])
 
+  // Load table data when table selection changes - data fetching pattern
   useEffect(() => {
     if (selectedTable && activeProject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadTableData(selectedTable)
     }
   }, [selectedTable, activeProject, loadTableData])

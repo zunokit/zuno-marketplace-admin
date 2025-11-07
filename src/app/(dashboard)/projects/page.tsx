@@ -64,9 +64,10 @@ export default function ProjectsPage() {
     setIsLoading(false)
   }
 
+  // Load projects on mount - data fetching pattern
   useEffect(() => {
-    loadProjects()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadProjects()
   }, [])
 
   function handleDelete(project: UIProject) {

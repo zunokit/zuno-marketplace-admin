@@ -73,10 +73,11 @@ export function useMembers() {
 
   useEffect(() => {
     if (activeProject) {
-      void loadMembers()
-      void loadInvitations()
+      loadMembers()
+      loadInvitations()
     }
-  }, [activeProject, loadMembers, loadInvitations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject])
 
   return {
     // State

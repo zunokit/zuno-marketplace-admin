@@ -5,9 +5,8 @@
 
 import type { ColumnInfo, TableInfo } from '@/types/api.types'
 
-export interface TableColumn extends ColumnInfo {
-  // Extended column info if needed
-}
+// Extended column info if needed in the future
+export type TableColumn = ColumnInfo
 
 // Re-export commonly used types
 export type { TableInfo, ColumnInfo }

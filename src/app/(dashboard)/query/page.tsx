@@ -6,7 +6,7 @@
  * Refactored for better maintainability and type safety
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Card,
   CardContent,
