@@ -1,0 +1,147 @@
+/**
+ * useTables Hook
+ * React Query hooks for table data management with optimized caching
+ */
+
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query'
+import { queryKeys, staleTimeConfig, gcTimeConfig } from '../config'
+import {
+  getTablesAction,
+  getTableDataAction,
+  type TableInfo,
+  type TableDataResponse,
+} from '@/app/actions/data/table-actions'
+import { toast } from 'sonner'
+
+/**
+ * Fetch all tables for a project with caching
+ */
+export function useTables(projectId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.tables.list(projectId || ''),
+    queryFn: async () => {
+      if (!projectId) throw new Error('Project ID is required')
+      const result = await getTablesAction(projectId)
+      if (result.success && result.data) {
+        return result.data as TableInfo[]
+      }
+      throw new Error('error' in result ? result.error : 'Failed to fetch tables')
+    },
+    enabled: !!projectId, // Only fetch if projectId is provided
+    staleTime: staleTimeConfig.static, // 30 minutes - schema rarely changes
+    gcTime: gcTimeConfig.long, // 30 minutes
+  })
+}
+
+/**
+ * Fetch table data with pagination and caching
+ */
+export function useTableData(
+  projectId: string | null,
+  tableName: string | null,
+  page: number = 1,
+  limit: number = 50,
+  options?: Omit<UseQueryOptions<TableDataResponse>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.tables.data(projectId || '', tableName || '', page, limit),
+    queryFn: async () => {
+      if (!projectId || !tableName) throw new Error('Project ID and table name are required')
+      const result = await getTableDataAction(projectId, tableName, page, limit)
+      if (result.success && result.data) {
+        return result.data
+      }
+      throw new Error('error' in result ? result.error : 'Failed to fetch table data')
+    },
+    enabled: !!projectId && !!tableName, // Only fetch if both are provided
+    staleTime: staleTimeConfig.frequent, // 2 minutes - data changes occasionally
+    gcTime: gcTimeConfig.normal, // 10 minutes
+    ...options,
+  })
+}
+
+/**
+ * Prefetch table data for next page
+ * Useful for pagination - prefetch next page in background
+ */
+export function usePrefetchTableData() {
+  const queryClient = useQueryClient()
+
+  return (projectId: string, tableName: string, nextPage: number, limit: number = 50) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.tables.data(projectId, tableName, nextPage, limit),
+      queryFn: async () => {
+        const result = await getTableDataAction(projectId, tableName, nextPage, limit)
+        if (result.success && result.data) {
+          return result.data
+        }
+        throw new Error('error' in result ? result.error : 'Failed to fetch table data')
+      },
+      staleTime: staleTimeConfig.frequent,
+    })
+  }
+}
+
+/**
+ * Invalidate table data cache
+ * Useful after mutations (insert, update, delete)
+ */
+export function useInvalidateTableData() {
+  const queryClient = useQueryClient()
+
+  return (projectId: string, tableName: string) => {
+    // Invalidate all pages of this table's data
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.tables.detail(projectId, tableName),
+    })
+  }
+}
+
+/**
+ * Invalidate all tables cache
+ * Useful after schema changes
+ */
+export function useInvalidateAllTables() {
+  const queryClient = useQueryClient()
+
+  return (projectId: string) => {
+    // Invalidate tables list
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.tables.list(projectId),
+    })
+
+    // Invalidate all table data for this project
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.tables.lists(),
+      predicate: (query) => {
+        const [, , qProjectId] = query.queryKey as [string, string, string]
+        return qProjectId === projectId
+      },
+    })
+  }
+}
+
+/**
+ * Get cached table data without refetching
+ * Useful for optimistic updates
+ */
+export function useTableDataCache() {
+  const queryClient = useQueryClient()
+
+  return {
+    getTableData: (projectId: string, tableName: string, page: number, limit: number) => {
+      return queryClient.getQueryData<TableDataResponse>(
+        queryKeys.tables.data(projectId, tableName, page, limit)
+      )
+    },
+    setTableData: (
+      projectId: string,
+      tableName: string,
+      page: number,
+      limit: number,
+      data: TableDataResponse
+    ) => {
+      queryClient.setQueryData(queryKeys.tables.data(projectId, tableName, page, limit), data)
+    },
+  }
+}
