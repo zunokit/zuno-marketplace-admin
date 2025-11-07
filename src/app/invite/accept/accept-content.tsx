@@ -5,7 +5,7 @@
  * Page for users to accept organization invitations
  */
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -62,17 +62,7 @@ export default function AcceptInvitationContent({ searchParams }: AcceptInvitati
   const [error, setError] = useState<string | null>(null)
   const [accepted, setAccepted] = useState(false)
 
-  useEffect(() => {
-    if (!invitationId || !token) {
-      setError('Invalid invitation link')
-      setIsLoading(false)
-      return
-    }
-
-    loadInvitationDetails()
-  }, [invitationId, token])
-
-  async function loadInvitationDetails() {
+  const loadInvitationDetails = useCallback(async () => {
     if (!invitationId) return
 
     setIsLoading(true)
@@ -95,7 +85,19 @@ export default function AcceptInvitationContent({ searchParams }: AcceptInvitati
     }
 
     setIsLoading(false)
-  }
+  }, [invitationId])
+
+  // Load invitation details on mount - data fetching pattern
+  useEffect(() => {
+    if (!invitationId || !token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setError('Invalid invitation link')
+      setIsLoading(false)
+      return
+    }
+
+    void loadInvitationDetails()
+  }, [invitationId, token, loadInvitationDetails])
 
   async function handleAcceptInvitation() {
     if (!invitationId || !token) {
@@ -201,9 +203,9 @@ export default function AcceptInvitationContent({ searchParams }: AcceptInvitati
           <div className="flex justify-center mb-4">
             <UserPlus className="h-16 w-16 text-primary" />
           </div>
-          <CardTitle className="text-2xl">You're Invited!</CardTitle>
+          <CardTitle className="text-2xl">You&apos;re Invited!</CardTitle>
           <CardDescription>
-            You've been invited to join an organization
+            You&apos;ve been invited to join an organization
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

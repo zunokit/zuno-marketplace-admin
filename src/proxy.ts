@@ -4,7 +4,7 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { auth } from './src/lib/auth/config'
+import { auth } from './lib/auth/config'
 
 /**
  * Middleware configuration

@@ -6,7 +6,7 @@
  * Refactored for better maintainability and type safety
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Card,
   CardContent,
@@ -30,11 +30,11 @@ import {
 import { Play, History, Save, Trash2, Clock, FileCode, Loader2, AlertCircle, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { SqlEditor } from '@/components/query/sql-editor'
+import { SqlEditor } from '@/components/query/sql-editor-dynamic'
 import { QueryResults, exportToCsv, exportToJson } from '@/components/query/query-results'
 import { useQueryRunner } from '@/components/features/query/hooks/useQueryRunner'
 import { useQueryHistory } from '@/components/features/query/hooks/useQueryHistory'
-import type { SavedQuery } from '@/components/features/query/types'
+import type { SavedQuery } from '@/types/features/query.types'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function QueryPage() {

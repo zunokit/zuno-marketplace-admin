@@ -11,7 +11,7 @@ import {
   revokeInvitationAction,
 } from '@/app/actions/members/member-actions'
 import { toast } from 'sonner'
-import type { Member, Invitation } from '../types'
+import type { Member, Invitation } from '@/types/features/members.types'
 
 export function useMembers() {
   const { activeProject } = useActiveProject()
@@ -73,10 +73,11 @@ export function useMembers() {
 
   useEffect(() => {
     if (activeProject) {
-      void loadMembers()
-      void loadInvitations()
+      loadMembers()
+      loadInvitations()
     }
-  }, [activeProject, loadMembers, loadInvitations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject])
 
   return {
     // State
