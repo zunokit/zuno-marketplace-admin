@@ -7,6 +7,27 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { LucideIcon } from 'lucide-react'
 
 // ============================================================================
+// Project UI Types
+// ============================================================================
+
+export interface UIProject {
+  id: string
+  name: string
+  slug: string
+  projectType: string | null
+  description: string | null
+  isActive: boolean
+  metadata: Record<string, unknown> | null
+  createdAt: Date
+  updatedAt: Date
+  status: string
+  databaseUrl: string | null
+  icon: string | null
+  color: string | null
+  logo: string | null
+}
+
+// ============================================================================
 // Data Table Types
 // ============================================================================
 

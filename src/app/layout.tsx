@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-// NOTE: Google Fonts disabled due to build environment network restrictions
+// Temporarily disabled due to network restrictions in build environment
 // import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/providers/theme-provider'
@@ -27,7 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body
+        className="antialiased"
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

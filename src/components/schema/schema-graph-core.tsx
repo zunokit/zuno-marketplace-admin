@@ -65,7 +65,7 @@ function calculateAutoLayout(
   return positions;
 }
 
-export function SchemaGraph({ schema, onTableSelect }: SchemaGraphProps) {
+export function SchemaGraphCore({ schema, onTableSelect }: SchemaGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<TableNodeData>>(
     []
   );
