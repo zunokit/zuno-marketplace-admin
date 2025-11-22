@@ -4,6 +4,7 @@ import { ProjectAuditLogRepository } from "@/lib/infrastructure/database/reposit
 import { MemberRepository } from "@/lib/infrastructure/database/repositories/member.repository";
 import { InvitationRepository } from "@/lib/infrastructure/database/repositories/invitation.repository";
 import { QueryRepository } from "@/lib/infrastructure/database/repositories/query.repository";
+import { FeatureFlagRepository } from "@/lib/infrastructure/database/repositories/feature-flag.repository";
 import { EncryptionService } from "@/lib/infrastructure/external/encryption.service";
 import { QueryBuilderService } from "@/lib/core/services/query-builder.service";
 import { getEmailService } from "@/lib/infrastructure/external/email";
@@ -24,6 +25,12 @@ import { AcceptInvitationUseCase } from "@/lib/core/use-cases/members/accept-inv
 import { GetInvitationDetailsUseCase } from "@/lib/core/use-cases/members/get-invitation-details.use-case";
 import { ExecuteQueryUseCase } from "@/lib/core/use-cases/queries/execute-query.use-case";
 import { SaveQueryUseCase } from "@/lib/core/use-cases/queries/save-query.use-case";
+import { CreateFeatureFlagUseCase } from "@/lib/core/use-cases/feature-flags/create-feature-flag.use-case";
+import { UpdateFeatureFlagUseCase } from "@/lib/core/use-cases/feature-flags/update-feature-flag.use-case";
+import { ToggleFeatureFlagUseCase } from "@/lib/core/use-cases/feature-flags/toggle-feature-flag.use-case";
+import { GetFeatureFlagsUseCase } from "@/lib/core/use-cases/feature-flags/get-feature-flags.use-case";
+import { CheckFeatureFlagUseCase } from "@/lib/core/use-cases/feature-flags/check-feature-flag.use-case";
+import { DeleteFeatureFlagUseCase } from "@/lib/core/use-cases/feature-flags/delete-feature-flag.use-case";
 
 class DIContainer {
   private static instance: DIContainer;
@@ -34,6 +41,7 @@ class DIContainer {
   private _memberRepository?: MemberRepository;
   private _invitationRepository?: InvitationRepository;
   private _queryRepository?: QueryRepository;
+  private _featureFlagRepository?: FeatureFlagRepository;
   private _encryptionService?: EncryptionService;
   private _queryBuilderService?: QueryBuilderService;
 
@@ -100,6 +108,13 @@ class DIContainer {
       this._queryRepository = new QueryRepository();
     }
     return this._queryRepository;
+  }
+
+  get featureFlagRepository(): FeatureFlagRepository {
+    if (!this._featureFlagRepository) {
+      this._featureFlagRepository = new FeatureFlagRepository();
+    }
+    return this._featureFlagRepository;
   }
 
   createProjectUseCase(): CreateProjectUseCase {
@@ -199,6 +214,33 @@ class DIContainer {
 
   getInvitationDetailsUseCase(): GetInvitationDetailsUseCase {
     return new GetInvitationDetailsUseCase(this.invitationRepository);
+  }
+
+  createFeatureFlagUseCase(): CreateFeatureFlagUseCase {
+    return new CreateFeatureFlagUseCase(
+      this.featureFlagRepository,
+      this.encryptionService
+    );
+  }
+
+  updateFeatureFlagUseCase(): UpdateFeatureFlagUseCase {
+    return new UpdateFeatureFlagUseCase(this.featureFlagRepository);
+  }
+
+  toggleFeatureFlagUseCase(): ToggleFeatureFlagUseCase {
+    return new ToggleFeatureFlagUseCase(this.featureFlagRepository);
+  }
+
+  getFeatureFlagsUseCase(): GetFeatureFlagsUseCase {
+    return new GetFeatureFlagsUseCase(this.featureFlagRepository);
+  }
+
+  checkFeatureFlagUseCase(): CheckFeatureFlagUseCase {
+    return new CheckFeatureFlagUseCase(this.featureFlagRepository);
+  }
+
+  deleteFeatureFlagUseCase(): DeleteFeatureFlagUseCase {
+    return new DeleteFeatureFlagUseCase(this.featureFlagRepository);
   }
 }
 

@@ -47,6 +47,8 @@ export type ProjectPermission =
   | 'project.read'
   | 'project.update'
   | 'project.settings'
+  | 'project.settings.read'
+  | 'project.settings.update'
   | 'project.delete'
   | 'members.invite'
   | 'members.remove'
@@ -103,6 +105,8 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, ProjectPermission[]> = {
     'project.read',
     'project.update',
     'project.settings',
+    'project.settings.read',
+    'project.settings.update',
     'project.delete',
     'members.invite',
     'members.remove',
@@ -116,6 +120,8 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, ProjectPermission[]> = {
     'project.read',
     'project.update',
     'project.settings',
+    'project.settings.read',
+    'project.settings.update',
     'members.invite',
     'members.remove',
     'members.update_role',
@@ -124,8 +130,8 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, ProjectPermission[]> = {
     'data.update',
     'data.delete',
   ],
-  editor: ['project.read', 'data.create', 'data.read', 'data.update', 'data.delete'],
-  viewer: ['project.read', 'data.read'],
+  editor: ['project.read', 'project.settings.read', 'data.create', 'data.read', 'data.update', 'data.delete'],
+  viewer: ['project.read', 'project.settings.read', 'data.read'],
 }
 
 // ============================================================================
