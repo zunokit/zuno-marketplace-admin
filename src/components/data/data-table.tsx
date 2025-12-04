@@ -51,7 +51,6 @@ import {
   DropdownMenu as ActionsDropdownMenu,
   DropdownMenuContent as ActionsDropdownMenuContent,
   DropdownMenuItem as ActionsDropdownMenuItem,
-  DropdownMenuSeparator as ActionsDropdownMenuSeparator,
   DropdownMenuTrigger as ActionsDropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 

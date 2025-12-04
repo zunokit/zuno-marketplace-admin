@@ -10,7 +10,6 @@ import { organization as organizationTable } from "@/lib/infrastructure/database
 import { eq } from "drizzle-orm";
 import { decrypt } from "@/lib/crypto";
 import postgres from "postgres";
-import { withUseCase } from "@/lib/utils/service-error-handler";
 
 export class TestProjectConnectionUseCase {
   async execute(

@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createProjectAction, updateProjectAction } from '@/app/actions/projects/project-actions'
 import {
   createProjectSchema,
-  updateProjectSchema,
   updateProjectFormSchema,
   type CreateProjectInput,
   type UpdateProjectInput,

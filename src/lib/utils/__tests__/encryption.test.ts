@@ -3,7 +3,7 @@
  * Tests for AES-256-GCM encryption/decryption
  */
 
-import { encrypt, decrypt, generateEncryptionKey } from '../encryption'
+import { encrypt, decrypt, generateEncryptionKey } from '@/lib/crypto'
 
 describe('Encryption Utility', () => {
   describe('generateEncryptionKey', () => {
@@ -96,10 +96,13 @@ describe('Encryption Utility', () => {
       expect(() => encrypt('test')).toThrow('Failed to encrypt data')
     })
 
-    it('should throw error if ENCRYPTION_KEY is invalid length', () => {
+    it('should work with any ENCRYPTION_KEY length (PBKDF2 derives key)', () => {
+      // PBKDF2 can derive a secure key from any password length
       process.env.ENCRYPTION_KEY = 'short'
 
-      expect(() => encrypt('test')).toThrow()
+      const encrypted = encrypt('test')
+      const decrypted = decrypt(encrypted)
+      expect(decrypted).toBe('test')
     })
   })
 

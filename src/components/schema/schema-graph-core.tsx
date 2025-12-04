@@ -22,9 +22,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import { TableNode, type TableNodeData } from "./table-node";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ZoomIn, ZoomOut, Maximize2, Download } from "lucide-react";
+import { Search } from "lucide-react";
 import type { CompleteSchemaInfo } from "@/app/actions/schema/schema-actions";
 
 const nodeTypes = {
@@ -41,7 +40,7 @@ type SchemaGraphProps = {
  */
 function calculateAutoLayout(
   tables: CompleteSchemaInfo["tables"],
-  relationships: CompleteSchemaInfo["relationships"]
+  _relationships: CompleteSchemaInfo["relationships"]
 ): { x: number; y: number }[] {
   const tableCount = tables.length;
   const positions: { x: number; y: number }[] = [];
@@ -71,7 +70,7 @@ export function SchemaGraphCore({ schema, onTableSelect }: SchemaGraphProps) {
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [, setSelectedTable] = useState<string | null>(null);
 
   // Initialize nodes and edges from schema
   useEffect(() => {
