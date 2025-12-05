@@ -44,6 +44,7 @@ interface TableDetailsPanelProps {
   schema?: CompleteSchemaInfo | null
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function TableDetailsPanel({ projectId, table, schema: _schema }: TableDetailsPanelProps) {
   const [metadata, setMetadata] = useState<TableMetadata | null>(null)
   const [constraints, setConstraints] = useState<TableConstraint[]>([])

@@ -40,6 +40,7 @@ type SchemaGraphProps = {
  */
 function calculateAutoLayout(
   tables: CompleteSchemaInfo["tables"],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _relationships: CompleteSchemaInfo["relationships"]
 ): { x: number; y: number }[] {
   const tableCount = tables.length;

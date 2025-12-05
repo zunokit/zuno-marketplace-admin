@@ -200,6 +200,7 @@ describe('Project Validation Schemas', () => {
       })
 
       it('should accept optional description', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { description, ...inputWithoutDescription } = validInput
         const result = createProjectSchema.safeParse(inputWithoutDescription)
 
@@ -271,6 +272,7 @@ describe('Project Validation Schemas', () => {
       })
 
       it('should accept optional metadata', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { metadata, ...inputWithoutMetadata } = validInput
         const result = createProjectSchema.safeParse(inputWithoutMetadata)
 
