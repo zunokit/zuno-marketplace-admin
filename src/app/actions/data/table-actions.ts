@@ -8,7 +8,7 @@
 import { revalidatePath } from 'next/cache'
 import { requireAuth } from '@/lib/auth/middleware'
 import { requireProjectPermission } from '@/lib/auth/permissions'
-import { serverActionSuccess, serverActionError, type ServerActionResponse } from '@/lib/utils/api-response'
+import { type ServerActionResponse } from '@/lib/utils/api-response'
 import { withServerAction } from '@/lib/utils/try-catch'
 import {
   getProjectTables,

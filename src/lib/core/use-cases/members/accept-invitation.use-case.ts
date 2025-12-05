@@ -12,9 +12,6 @@ import {
   verifyInvitationToken,
   isInvitationExpired,
 } from '@/lib/utils/invitation-token'
-import { db } from '@/lib/db'
-import { user as userTable } from '@/lib/infrastructure/database/schemas'
-import { eq } from 'drizzle-orm'
 
 interface AcceptInvitationInput {
   invitationId: string

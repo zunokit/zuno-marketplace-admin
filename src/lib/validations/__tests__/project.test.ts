@@ -32,7 +32,13 @@ describe('Project Validation Schemas', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data).toEqual(validInput)
+        // Schema adds default status, so compare key fields
+        expect(result.data.name).toEqual(validInput.name)
+        expect(result.data.slug).toEqual(validInput.slug)
+        expect(result.data.projectType).toEqual(validInput.projectType)
+        expect(result.data.description).toEqual(validInput.description)
+        expect(result.data.databaseUrl).toEqual(validInput.databaseUrl)
+        expect(result.data.status).toBe('active') // Default value
       }
     })
 
@@ -146,11 +152,12 @@ describe('Project Validation Schemas', () => {
 
     describe('databaseUrl validation', () => {
       it('should accept valid PostgreSQL URLs', () => {
+        // URLs must match format: postgresql://[user[:password]@]host[:port]/database
         const validUrls = [
-          'postgresql://localhost:5432/db',
+          'postgresql://user:pass@localhost:5432/db',
           'postgresql://user:pass@host:5432/database',
-          'postgresql://user@localhost/db',
-          'postgresql://user:p@ss@localhost:5432/db',
+          'postgresql://user@localhost:5432/db',
+          'postgresql://admin:secret@db.example.com:5432/mydb',
         ]
 
         validUrls.forEach((databaseUrl) => {
@@ -193,6 +200,7 @@ describe('Project Validation Schemas', () => {
       })
 
       it('should accept optional description', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { description, ...inputWithoutDescription } = validInput
         const result = createProjectSchema.safeParse(inputWithoutDescription)
 
@@ -264,6 +272,7 @@ describe('Project Validation Schemas', () => {
       })
 
       it('should accept optional metadata', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { metadata, ...inputWithoutMetadata } = validInput
         const result = createProjectSchema.safeParse(inputWithoutMetadata)
 

@@ -3,7 +3,7 @@
  * Centralized types for all API contracts
  */
 
-import type { ProjectRole, ProjectPermission } from './domain.types'
+import type { ProjectRole } from './domain.types'
 
 // ============================================================================
 // Generic API Types

@@ -44,7 +44,6 @@ import {
   getUserProjectRole,
   isSuperAdmin,
 } from '@/lib/auth/permissions'
-import { logger } from '@/lib/utils/logger'
 import { ForbiddenError } from '@/lib/utils/error-handler'
 import { withErrorHandling } from '@/lib/utils/try-catch'
 

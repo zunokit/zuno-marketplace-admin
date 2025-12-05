@@ -12,7 +12,7 @@ import {
 } from '@/app/actions/data/table-actions'
 import { toast } from 'sonner'
 import type { TableInfo } from '@/types/features/data.types'
-import type { ColumnInfo, TableDataResponse } from '@/types/api.types'
+import type { ColumnInfo } from '@/types/api.types'
 
 export function useDataTable() {
   const { activeProject } = useActiveProject()

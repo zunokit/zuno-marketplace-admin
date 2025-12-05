@@ -5,8 +5,6 @@
  */
 
 import nodemailer from 'nodemailer'
-// Import Transporter type directly from nodemailer's types
-import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 import { BaseEmailService } from './base-email.service'
 import {
   EmailOptions,

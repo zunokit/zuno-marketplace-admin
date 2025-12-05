@@ -7,7 +7,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireAuth } from '@/lib/auth/middleware'
-import { serverActionSuccess, type ServerActionResponse } from '@/lib/utils/api-response'
+import { type ServerActionResponse } from '@/lib/utils/api-response'
 import { withServerAction } from '@/lib/utils/try-catch'
 import { container } from '@/lib/core/di-container'
 import { inviteUserSchema, updateMemberRoleSchema, removeMemberSchema, revokeInvitationSchema } from '@/lib/validations/member'

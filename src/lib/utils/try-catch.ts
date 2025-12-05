@@ -35,7 +35,7 @@
  */
 
 import { logger } from './logger'
-import { AppError, sanitizeError } from './error-handler'
+import { AppError } from './error-handler'
 import { serverActionSuccess, serverActionError, type ServerActionResponse } from './api-response'
 
 /**

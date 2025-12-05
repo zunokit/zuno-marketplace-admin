@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, ilike, count as drizzleCount, isNull, isNotNull } from "drizzle-orm";
+import { eq, ne, and, desc, asc, ilike, count as drizzleCount, isNull, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/infrastructure/database/schemas";
 import type {
@@ -175,7 +175,8 @@ export class ProjectRepository implements IProjectRepository {
     const conditions = [eq(organization.slug, slug), isNull(organization.deletedAt)];
 
     if (excludeId) {
-      conditions.push(eq(organization.id, excludeId));
+      // Exclude the current project when checking for duplicate slug (for updates)
+      conditions.push(ne(organization.id, excludeId));
     }
 
     const [result] = await db

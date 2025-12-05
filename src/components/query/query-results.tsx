@@ -5,7 +5,7 @@
  * Displays query results in a scrollable table
  */
 
-import { useMemo } from 'react'
+
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Download, FileJson, FileText } from 'lucide-react'
+import { FileJson, FileText } from 'lucide-react'
 import type { QueryResult } from '@/app/actions/query/query-actions'
 
 type QueryResultsProps = {
