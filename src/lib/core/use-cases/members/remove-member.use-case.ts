@@ -7,6 +7,7 @@ import type { IMemberRepository } from '@/lib/core/domain/interfaces/member.repo
 import type { ProjectRole } from '@/types/domain.types'
 import { ForbiddenError, NotFoundError } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
+import { isSuperAdmin } from '@/lib/auth/permissions'
 
 interface RemoveMemberInput {
   memberId: string
@@ -24,19 +25,24 @@ export class RemoveMemberUseCase {
       throw new NotFoundError('Member not found')
     }
 
-    // Check if requester is admin/owner of this organization
-    const requesterMembership = await this.memberRepository.findByUserAndOrganization(
-      input.requesterId,
-      targetMember.organizationId
-    )
+    // Super admins can manage any organization
+    const isAdmin = await isSuperAdmin(input.requesterId)
+    
+    if (!isAdmin) {
+      // Check if requester is admin/owner of this organization
+      const requesterMembership = await this.memberRepository.findByUserAndOrganization(
+        input.requesterId,
+        targetMember.organizationId
+      )
 
-    if (!requesterMembership || !this.canRemoveMembers(requesterMembership.role)) {
-      logger.warn('User attempted to remove member without proper permissions', {
-        requesterId: input.requesterId,
-        targetMemberId: input.memberId,
-        requesterRole: requesterMembership?.role,
-      })
-      throw new ForbiddenError('Only admins and owners can remove members')
+      if (!requesterMembership || !this.canRemoveMembers(requesterMembership.role)) {
+        logger.warn('User attempted to remove member without proper permissions', {
+          requesterId: input.requesterId,
+          targetMemberId: input.memberId,
+          requesterRole: requesterMembership?.role,
+        })
+        throw new ForbiddenError('Only admins and owners can remove members')
+      }
     }
 
     // Prevent users from removing themselves

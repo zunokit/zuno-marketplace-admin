@@ -8,6 +8,7 @@ import type { IInvitationRepository } from '@/lib/core/domain/interfaces/invitat
 import type { ProjectRole } from '@/types/domain.types'
 import { ForbiddenError, NotFoundError } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
+import { isSuperAdmin } from '@/lib/auth/permissions'
 
 interface RevokeInvitationInput {
   invitationId: string
@@ -28,19 +29,24 @@ export class RevokeInvitationUseCase {
       throw new NotFoundError('Invitation not found')
     }
 
-    // Check if requester is admin/owner of this organization
-    const requesterMembership = await this.memberRepository.findByUserAndOrganization(
-      input.requesterId,
-      invitation.organizationId
-    )
+    // Super admins can manage any organization
+    const isAdmin = await isSuperAdmin(input.requesterId)
+    
+    if (!isAdmin) {
+      // Check if requester is admin/owner of this organization
+      const requesterMembership = await this.memberRepository.findByUserAndOrganization(
+        input.requesterId,
+        invitation.organizationId
+      )
 
-    if (!requesterMembership || !this.canRevokeInvitations(requesterMembership.role)) {
-      logger.warn('User attempted to revoke invitation without proper permissions', {
-        requesterId: input.requesterId,
-        invitationId: input.invitationId,
-        requesterRole: requesterMembership?.role,
-      })
-      throw new ForbiddenError('Only admins and owners can revoke invitations')
+      if (!requesterMembership || !this.canRevokeInvitations(requesterMembership.role)) {
+        logger.warn('User attempted to revoke invitation without proper permissions', {
+          requesterId: input.requesterId,
+          invitationId: input.invitationId,
+          requesterRole: requesterMembership?.role,
+        })
+        throw new ForbiddenError('Only admins and owners can revoke invitations')
+      }
     }
 
     // Delete the invitation

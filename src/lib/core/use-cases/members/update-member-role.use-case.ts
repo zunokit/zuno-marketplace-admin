@@ -8,6 +8,7 @@ import type { MemberEntity } from '@/lib/core/domain/entities/member.entity'
 import type { ProjectRole } from '@/types/domain.types'
 import { ForbiddenError, NotFoundError } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
+import { isSuperAdmin } from '@/lib/auth/permissions'
 
 interface UpdateMemberRoleInput {
   memberId: string
@@ -26,19 +27,24 @@ export class UpdateMemberRoleUseCase {
       throw new NotFoundError('Member not found')
     }
 
-    // Check if requester is admin/owner of this organization
-    const requesterMembership = await this.memberRepository.findByUserAndOrganization(
-      input.requesterId,
-      targetMember.organizationId
-    )
+    // Super admins can manage any organization
+    const isAdmin = await isSuperAdmin(input.requesterId)
+    
+    if (!isAdmin) {
+      // Check if requester is admin/owner of this organization
+      const requesterMembership = await this.memberRepository.findByUserAndOrganization(
+        input.requesterId,
+        targetMember.organizationId
+      )
 
-    if (!requesterMembership || !this.canManageRoles(requesterMembership.role)) {
-      logger.warn('User attempted to update member role without proper permissions', {
-        requesterId: input.requesterId,
-        targetMemberId: input.memberId,
-        requesterRole: requesterMembership?.role,
-      })
-      throw new ForbiddenError('Only admins and owners can update member roles')
+      if (!requesterMembership || !this.canManageRoles(requesterMembership.role)) {
+        logger.warn('User attempted to update member role without proper permissions', {
+          requesterId: input.requesterId,
+          targetMemberId: input.memberId,
+          requesterRole: requesterMembership?.role,
+        })
+        throw new ForbiddenError('Only admins and owners can update member roles')
+      }
     }
 
     // Prevent users from changing their own role

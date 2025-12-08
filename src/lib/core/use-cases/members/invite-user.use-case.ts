@@ -13,6 +13,7 @@ import type { InvitationEntity } from '@/lib/core/domain/entities/invitation.ent
 import type { ProjectRole } from '@/types/domain.types'
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
+import { isSuperAdmin } from '@/lib/auth/permissions'
 import {
   generateInvitationToken,
   hashInvitationToken,
@@ -37,19 +38,24 @@ export class InviteUserUseCase {
   ) {}
 
   async execute(input: InviteUserInput): Promise<InvitationEntity> {
-    // Check if inviter is admin/owner of this organization
-    const inviterMembership = await this.memberRepository.findByUserAndOrganization(
-      input.inviterId,
-      input.organizationId
-    )
+    // Super admins can invite to any organization
+    const isAdmin = await isSuperAdmin(input.inviterId)
+    
+    if (!isAdmin) {
+      // Check if inviter is admin/owner of this organization
+      const inviterMembership = await this.memberRepository.findByUserAndOrganization(
+        input.inviterId,
+        input.organizationId
+      )
 
-    if (!inviterMembership || !this.canInviteUsers(inviterMembership.role)) {
-      logger.warn('User attempted to invite without proper permissions', {
-        userId: input.inviterId,
-        organizationId: input.organizationId,
-        userRole: inviterMembership?.role,
-      })
-      throw new ForbiddenError('Only admins and owners can invite users')
+      if (!inviterMembership || !this.canInviteUsers(inviterMembership.role)) {
+        logger.warn('User attempted to invite without proper permissions', {
+          userId: input.inviterId,
+          organizationId: input.organizationId,
+          userRole: inviterMembership?.role,
+        })
+        throw new ForbiddenError('Only admins and owners can invite users')
+      }
     }
 
     // Get organization details
