@@ -38,6 +38,11 @@ export async function checkProjectPermission(
 ): Promise<boolean> {
   const result = await withErrorHandling(
     async () => {
+      // Super admins have all permissions
+      if (await isSuperAdmin(userId)) {
+        return true
+      }
+
       // Get user's role in the project
       const membership = await db.query.member.findFirst({
         where: and(

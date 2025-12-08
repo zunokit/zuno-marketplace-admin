@@ -11,6 +11,7 @@ import {
   FileCode,
   Network,
   Search,
+  GitBranch,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -91,6 +92,12 @@ const navigationGroups: NavigationGroup[] = [
         href: "/query",
         icon: FileCode,
         description: "SQL query runner",
+      },
+      {
+        name: "Diagram",
+        href: "/diagram",
+        icon: GitBranch,
+        description: "Visual diagram editor",
       },
     ],
   },

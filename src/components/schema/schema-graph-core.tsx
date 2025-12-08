@@ -17,7 +17,6 @@ import {
   type Node,
   type Edge,
   MarkerType,
-  Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { TableNode, type TableNodeData } from "./table-node";
@@ -106,20 +105,22 @@ export function SchemaGraphCore({ schema, onTableSelect }: SchemaGraphProps) {
         id: `${rel.sourceTable}-${rel.sourceColumn}-${rel.targetTable}-${index}`,
         source: rel.sourceTable,
         target: rel.targetTable,
-        sourceHandle: Position.Right,
-        targetHandle: Position.Left,
         type: "smoothstep",
         animated: false,
         label: rel.sourceColumn,
         labelStyle: { fontSize: 10, fill: "#64748b" },
+        labelBgStyle: { fill: "hsl(var(--background))", fillOpacity: 0.9 },
+        labelBgPadding: [4, 2] as [number, number],
+        labelBgBorderRadius: 4,
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 15,
           height: 15,
+          color: "#94a3b8",
         },
         style: {
           stroke: "#94a3b8",
-          strokeWidth: 1.5,
+          strokeWidth: 2,
         },
       }));
 

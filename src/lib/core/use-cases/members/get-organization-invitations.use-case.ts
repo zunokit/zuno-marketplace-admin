@@ -9,6 +9,7 @@ import type { InvitationWithInviterDetails } from '@/lib/core/domain/entities/in
 import { ForbiddenError } from '@/lib/utils/error-handler'
 import { logger } from '@/lib/utils/logger'
 import type { ProjectRole } from '@/types/domain.types'
+import { isSuperAdmin } from '@/lib/auth/permissions'
 
 export class GetOrganizationInvitationsUseCase {
   constructor(
@@ -20,19 +21,24 @@ export class GetOrganizationInvitationsUseCase {
     organizationId: string,
     userId: string
   ): Promise<InvitationWithInviterDetails[]> {
-    // Check if user is admin/owner of this organization
-    const userMembership = await this.memberRepository.findByUserAndOrganization(
-      userId,
-      organizationId
-    )
-
-    if (!userMembership || !this.canManageInvitations(userMembership.role)) {
-      logger.warn('User attempted to view invitations without proper permissions', {
+    // Super admins can access all organizations
+    const isAdmin = await isSuperAdmin(userId)
+    
+    if (!isAdmin) {
+      // Check if user is admin/owner of this organization
+      const userMembership = await this.memberRepository.findByUserAndOrganization(
         userId,
-        organizationId,
-        userRole: userMembership?.role,
-      })
-      throw new ForbiddenError('Only admins and owners can view invitations')
+        organizationId
+      )
+
+      if (!userMembership || !this.canManageInvitations(userMembership.role)) {
+        logger.warn('User attempted to view invitations without proper permissions', {
+          userId,
+          organizationId,
+          userRole: userMembership?.role,
+        })
+        throw new ForbiddenError('Only admins and owners can view invitations')
+      }
     }
 
     const invitations = await this.invitationRepository.findPendingByOrganization(organizationId)
