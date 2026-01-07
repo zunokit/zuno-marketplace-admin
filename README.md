@@ -2,240 +2,258 @@
 
 A scalable, multi-project admin dashboard built with Next.js 16, designed to manage multiple marketplace products from a single unified interface.
 
-## Features
+## ✨ Features
 
-- ✅ **Multi-Project Architecture**: Manage multiple projects (ABIs, Metadata, etc.) from one dashboard
-- ✅ **Role-Based Access Control (RBAC)**: Fine-grained permissions with owner, admin, editor, and viewer roles
-- ✅ **Multi-Database Support**: Each project connects to its own database with connection pooling
-- ✅ **Row Level Security (RLS)**: Database-level security for multi-tenant isolation
-- ✅ **Authentication**: Powered by Better-Auth with organization and admin plugins
-- ✅ **Modern Stack**: Next.js 16, React 19, TypeScript, Drizzle ORM, Tailwind CSS v4, shadcn/ui
-- ✅ **Scalable Design**: Easy to add new projects and databases
+- **Multi-Project Architecture**: Manage multiple projects from one dashboard
+- **Role-Based Access Control (RBAC)**: Global + project-level permissions
+- **Multi-Database Support**: Each project connects to its own PostgreSQL database
+- **Row Level Security (RLS)**: Database-level multi-tenant isolation
+- **Authentication**: Better-Auth with organization and admin plugins
+- **Modern Stack**: Next.js 16, React 19, TypeScript, Drizzle ORM, Tailwind CSS v4, shadcn/ui
+- **Data Management**: Browse, query, and modify project data with intuitive UI
+- **Schema Visualization**: Interactive ER diagrams and schema explorer
+- **SQL Query Runner**: Execute queries with safety checks and history
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js 18+ or higher
-- pnpm (recommended) or npm/yarn
+### Prerequisites
+- Node.js 18+
+- pnpm (recommended)
 - PostgreSQL database (Supabase recommended)
-- Git
 
-## Quick Start
-
-### 1. Clone and Install
+### Installation
 
 ```bash
+# Clone repository
 git clone <repository-url>
 cd zuno-marketplace-admin
+
+# Install dependencies
 pnpm install
-```
 
-### 2. Environment Setup
-
-Copy the example environment file:
-
-```bash
+# Setup environment
 cp .env.example .env.local
-```
+# Edit .env.local with your credentials
 
-Update `.env.local` with your credentials. Get your Supabase credentials from [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/database).
-
-### 3. Database Setup
-
-```bash
-# Push schema to database
+# Setup database
 pnpm db:push
-
-# Apply RLS policies (run in Supabase SQL Editor or psql)
 psql $DATABASE_URL < src/lib/db/rls-policies.sql
-```
 
-### 4. Run Development Server
-
-```bash
+# Start development server
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and sign up to create your first account.
 
-## Project Structure
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Project Overview & PDR](./docs/project-overview-pdr.md) | Project goals, features, requirements, and roadmap |
+| [Codebase Summary](./docs/codebase-summary.md) | Directory structure, key modules, and data flows |
+| [Code Standards](./docs/code-standards.md) | TypeScript, React, and architectural conventions |
+| [System Architecture](./docs/system-architecture.md) | Clean Architecture, multi-database design, security |
+
+## 🛠️ Technology Stack
+
+**Frontend**
+- Next.js 16 (App Router, React Server Components)
+- React 19.2
+- TypeScript (strict mode)
+- Tailwind CSS v4
+- shadcn/ui (New York style)
+- TanStack Table/Query/Virtual
+- react-hook-form + Zod
+
+**Backend**
+- Next.js Server Actions
+- Better-Auth (authentication)
+- PostgreSQL (multi-database)
+- Drizzle ORM
+- AES-256-GCM encryption
+
+**DevOps**
+- Vercel (deployment)
+- GitHub (version control)
+- pnpm (package manager)
+
+## 📦 Project Structure
 
 ```
 zuno-marketplace-admin/
 ├── src/
-│   ├── app/
-│   │   ├── (auth)/              # Authentication routes (login, signup)
-│   │   ├── (dashboard)/         # Protected dashboard routes
-│   │   └── api/auth/            # Better-auth API endpoints
-│   ├── components/
-│   │   ├── layout/              # Navigation, sidebar, project switcher
-│   │   ├── providers/           # React context providers
-│   │   └── ui/                  # shadcn/ui components
-│   ├── lib/
-│   │   ├── auth/                # Authentication config and utilities
-│   │   ├── db/                  # Database schemas and connections
-│   │   ├── projects/            # Project-specific adapters
-│   │   └── utils/               # Utility functions
-│   ├── types/                   # TypeScript types
-│   └── hooks/                   # Custom React hooks
-├── config/
-│   └── projects.config.ts       # Central project registry
-└── drizzle/                     # Database migrations
+│   ├── app/                    # Next.js 16 App Router
+│   │   ├── (auth)/             # Login, signup
+│   │   ├── (dashboard)/        # Protected routes (dashboard, projects, data, etc.)
+│   │   ├── invite/             # Public invitation acceptance
+│   │   └── api/                # API routes (Better-Auth)
+│   ├── components/             # React components
+│   │   ├── ui/                 # shadcn/ui primitives (28 components)
+│   │   ├── layout/             # Sidebar, navigation, shell
+│   │   ├── providers/          # Context providers (auth, project, query)
+│   │   └── features/           # Feature-specific components
+│   ├── lib/                    # Core business logic
+│   │   ├── core/               # Domain layer (entities, use cases, interfaces)
+│   │   ├── infrastructure/     # Repositories, services
+│   │   ├── auth/               # Better-Auth config, permissions
+│   │   ├── db/                 # Database schemas, connections
+│   │   ├── validations/        # Zod schemas
+│   │   └── utils/              # Logger, error handling, utilities
+│   ├── types/                  # TypeScript types
+│   └── hooks/                  # Custom React hooks
+├── config/                     # Configuration files
+├── docs/                       # Documentation
+├── drizzle/                    # Database migrations
+└── [config files]              # Root configuration
 ```
 
-## Architecture Overview
+See [Codebase Summary](./docs/codebase-summary.md) for detailed structure.
 
-### Multi-Project System
+## 🔧 Available Commands
 
-Each project is:
-
-1. Registered in `config/projects.config.ts`
-2. Mapped to its own database
-3. Represented as an "organization" in Better-Auth
-4. Isolated with Row Level Security (RLS)
-
-### RBAC System
-
-**Global Roles:**
-
-- `super_admin`: Full system access, can create projects
-- `user`: Regular user with project-specific access
-
-**Project Roles:**
-
-- `owner`: Full project access
-- `admin`: Manage members and settings
-- `editor`: Create, read, update, delete data
-- `viewer`: Read-only access
-
-## Adding a New Project
-
-### 1. Add Database URL
-
-In `.env.local`:
-
-```env
-NEW_PROJECT_DATABASE_URL="postgresql://..."
-```
-
-### 2. Register Project
-
-In `config/projects.config.ts`:
-
-```typescript
-export const PROJECTS_REGISTRY = {
-  // ... existing projects
-  newProject: {
-    id: "newProject",
-    name: "@zuno-marketplace-new",
-    slug: "zuno-new",
-    databaseUrl: process.env.NEW_PROJECT_DATABASE_URL,
-    description: "Description of the new project",
-    metadata: {
-      icon: "🆕",
-      color: "#10b981",
-      features: ["Feature 1", "Feature 2"],
-    },
-  },
-};
-```
-
-### 3. Restart Dev Server
-
-The new project will appear in the project switcher automatically.
-
-## Available Scripts
-
+### Development
 ```bash
-# Development
-pnpm dev              # Start development server
+pnpm dev              # Start development server (localhost:3000)
 pnpm build            # Build for production
 pnpm start            # Start production server
+pnpm typecheck        # TypeScript type checking
+pnpm lint             # Run ESLint
+pnpm lint:fix         # Fix ESLint errors
+```
 
-# Database
+### Database
+```bash
 pnpm db:generate      # Generate migrations
 pnpm db:migrate       # Run migrations
 pnpm db:push          # Push schema to database
 pnpm db:studio        # Open Drizzle Studio
-
-# Code Quality
-pnpm lint             # Run ESLint
-pnpm lint:fix         # Fix ESLint errors
-pnpm typecheck        # TypeScript type checking
 ```
 
-## Deployment to Vercel
+## 🏗️ Architecture Overview
 
-1. **Push to GitHub**:
+### Clean Architecture Layers
+```
+┌─────────────────────────────────────────────────────┐
+│  Presentation Layer (Next.js App Router)            │
+│  • Server Components  • Client Components           │
+│  • Server Actions     • Middleware                  │
+├─────────────────────────────────────────────────────┤
+│  Application Layer (Use Cases)                      │
+│  • CreateProjectUseCase  • InviteUserUseCase       │
+│  • Permission Checks     • Business Logic           │
+├─────────────────────────────────────────────────────┤
+│  Infrastructure Layer (Repositories & Services)     │
+│  • Drizzle ORM  • Better-Auth  • Email  • Encryption│
+├─────────────────────────────────────────────────────┤
+│  Core Layer (Domain Logic)                          │
+│  • Entities  • Interfaces  • DI Container           │
+└─────────────────────────────────────────────────────┘
+```
 
+### Multi-Database Architecture
+- **Auth Database**: Central database for users, sessions, organizations, members
+- **Project Databases**: Each project connects to its own PostgreSQL database
+- **Dynamic Connections**: `getProjectDb(projectId)` with connection pooling
+- **Security**: Encrypted database URLs, RLS policies, permission checks
+
+See [System Architecture](./docs/system-architecture.md) for details.
+
+## 🔐 RBAC System
+
+### Global Roles
+- **super_admin**: Full system access, can create projects
+- **user**: Regular user with project-specific access
+
+### Project Roles
+- **owner**: Full project access
+- **admin**: Manage members and settings
+- **editor**: Create, read, update, delete data
+- **viewer**: Read-only access
+
+See [System Architecture](./docs/system-architecture.md) for permission matrix.
+
+## 🌟 Key Features
+
+### Dashboard Routes
+- `/dashboard` - Overview with project statistics
+- `/projects` - Project management (CRUD)
+- `/members` - Team management (members + invitations)
+- `/data` - Data browser with TanStack Table (sorting, filtering, pagination)
+- `/query` - SQL query runner with history
+- `/schema` - Interactive ER diagram + schema explorer
+- `/diagram` - Visual diagram editor
+
+### Data Management
+- Browse all tables in project database
+- Dynamic form generation from database schema
+- Foreign key relationship handling
+- Bulk operations (delete, export)
+- CSV/JSON export
+- Virtualized rendering for 1000+ rows
+
+### Schema Tools
+- Interactive ER diagram (React Flow)
+- Table relationships visualization
+- Column details with types and constraints
+- Schema statistics and search
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+1. Push to GitHub:
    ```bash
-   git add .
-   git commit -m "feat: Initial setup"
    git push origin main
    ```
 
-2. **Import to Vercel**:
-
-   - Go to [vercel.com](https://vercel.com)
+2. Import to [Vercel](https://vercel.com):
    - Import your repository
-   - Configure environment variables (copy from `.env.local`)
+   - Configure environment variables (from `.env.local`)
+   - Set `BETTER_AUTH_URL` to production URL
 
-3. **Important**: Update `BETTER_AUTH_URL` to your production URL before deploying
+3. Apply RLS policies to production database:
+   ```bash
+   psql $PRODUCTION_DATABASE_URL < src/lib/db/rls-policies.sql
+   ```
 
-4. **Apply RLS policies** to your production database after first deploy
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript (Strict Mode)
-- **Database**: PostgreSQL (Supabase)
-- **ORM**: Drizzle ORM
-- **Auth**: Better-Auth
-- **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui
-- **Forms**: React Hook Form + Zod
-- **State Management**: React Query (TanStack Query)
-- **Deployment**: Vercel
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Database Connection Issues
-
 1. Verify `DATABASE_URL` is correct
 2. Check Supabase connection pooler is enabled
-3. Ensure RLS is enabled: Run `src/lib/db/rls-policies.sql`
+3. Ensure RLS policies are applied: `psql $DATABASE_URL < src/lib/db/rls-policies.sql`
 
 ### Authentication Issues
-
 1. Check `BETTER_AUTH_SECRET` is >32 characters
 2. Verify `BETTER_AUTH_URL` matches your domain
 3. Clear browser cookies/localStorage
 
 ### Build Errors
-
 ```bash
-# Type check
-pnpm typecheck
-
-# Lint
-pnpm lint
-
-# Clear build cache
-rm -rf .next
-pnpm build
+pnpm typecheck        # Check TypeScript errors
+pnpm lint             # Check ESLint errors
+rm -rf .next          # Clear build cache
+pnpm build            # Rebuild
 ```
 
-## Resources
+## 📖 Resources
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Better-Auth Documentation](https://better-auth.com)
 - [Drizzle ORM Documentation](https://orm.drizzle.team)
 - [shadcn/ui Documentation](https://ui.shadcn.com)
-- [Database Setup Guide](./src/lib/db/README.md)
+- [TanStack Table Documentation](https://tanstack.com/table)
 
-## License
+## 🤝 Contributing
+
+See [Code Standards](./docs/code-standards.md) for coding conventions and best practices.
+
+## 📄 License
 
 MIT
 
 ---
 
-Built with ❤️ for Zuno Marketplace
+**Built with ❤️ for Zuno Marketplace**
+
+For detailed documentation, see the [`docs/`](./docs/) directory.
