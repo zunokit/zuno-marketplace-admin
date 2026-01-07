@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "structure": "categorized",
+  "timestamp": "2026-01-07T14:38:40.705Z",
+  "skills": [
+    {
+      "name": "nextjs",
+      "category": "web-frameworks",
+      "hash": "e275a4e03a46cfcae406a3dd8b620d7dd3e45411e53222adaf4e33e568032b66"
+    },
+    {
+      "name": "postgresql-psql",
+      "category": "databases",
+      "hash": "e479f7eaca560acccedeb2504020d9ab23c8a4e7dd0d1cfdd96ff45676219716"
+    },
+    {
+      "name": "shadcn-ui",
+      "category": "ui-styling",
+      "hash": "55eee299650545cfc4f855abaa25397248f468d1d3adf9464a0653d6c4f5ddba"
+    },
+    {
+      "name": "tailwindcss",
+      "category": "ui-styling",
+      "hash": "fe72fab5d7dfd7a5bcbb67bad4b29bd2cb8aa50e0db2bd328382b9b7c5dd4895"
+    }
+  ]
+}
