@@ -1,0 +1,336 @@
+'use server'
+
+/**
+ * Server Actions for Schema Visualization
+ * Provides complete schema information including tables, columns, and relationships
+ */
+
+import { requireAuth } from '@/lib/auth/middleware'
+import { requireProjectPermission } from '@/lib/auth/permissions'
+import { type ServerActionResponse } from '@/lib/utils/api-response'
+import { withServerAction } from '@/lib/utils/try-catch'
+import {
+  getTableSchema,
+  getProjectTables,
+  getTableMetadata,
+  getTableConstraints,
+  getTableIndexes,
+  getTableDependencies,
+  getDatabaseStatistics,
+  type TableMetadata,
+  type TableConstraint,
+  type TableIndex,
+  type TableDependency,
+  type DatabaseStatistics,
+} from '@/lib/db/introspection'
+import { logger } from '@/lib/utils/logger'
+
+// Import types and re-export
+import type {
+  TableSchemaInfo,
+  SchemaRelationship,
+  CompleteSchemaInfo,
+  ColumnInfo,
+} from '@/types/schema.types'
+
+// Re-export types from introspection (these match database structure)
+export type {
+  TableMetadata,
+  TableConstraint,
+  TableIndex,
+  TableDependency,
+  DatabaseStatistics,
+} from '@/lib/db/introspection'
+
+// Re-export schema types
+export type { TableSchemaInfo, SchemaRelationship, CompleteSchemaInfo, ColumnInfo }
+
+/**
+ * Get complete database schema including all tables, columns, and relationships
+ */
+export async function getCompleteSchemaAction(
+  projectId: string
+): Promise<ServerActionResponse<CompleteSchemaInfo>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching complete schema', { projectId })
+
+    // Get all tables
+    const tables = await getProjectTables(projectId)
+
+    // Get schema for each table (columns, types, constraints)
+    const tablesWithSchema = await Promise.all(
+      tables.map(async (table) => {
+        const columns = await getTableSchema(projectId, table.tableName)
+        return {
+          tableName: table.tableName,
+          schemaName: table.schemaName,
+          rowCount: table.rowCount,
+          columns,
+        }
+      })
+    )
+
+    // Extract relationships from foreign keys
+    const relationships: SchemaRelationship[] = []
+
+    for (const table of tablesWithSchema) {
+      for (const column of table.columns) {
+        if (column.isForeignKey && column.foreignKeyTable && column.foreignKeyColumn) {
+          relationships.push({
+            sourceTable: table.tableName,
+            sourceColumn: column.columnName,
+            targetTable: column.foreignKeyTable,
+            targetColumn: column.foreignKeyColumn,
+            relationshipType: 'many-to-one', // Source has FK to target
+          })
+
+          // Also add reverse relationship
+          relationships.push({
+            sourceTable: column.foreignKeyTable,
+            sourceColumn: column.foreignKeyColumn,
+            targetTable: table.tableName,
+            targetColumn: column.columnName,
+            relationshipType: 'one-to-many', // Target is referenced by source
+          })
+        }
+      }
+    }
+
+    // Remove duplicate relationships
+    const uniqueRelationships = relationships.filter(
+      (rel, index, self) =>
+        index ===
+        self.findIndex(
+          (r) =>
+            r.sourceTable === rel.sourceTable &&
+            r.sourceColumn === rel.sourceColumn &&
+            r.targetTable === rel.targetTable &&
+            r.targetColumn === rel.targetColumn
+        )
+    )
+
+    const result: CompleteSchemaInfo = {
+      tables: tablesWithSchema,
+      relationships: uniqueRelationships,
+    }
+
+    logger.info('Retrieved complete schema', {
+      projectId,
+      tableCount: tablesWithSchema.length,
+      relationshipCount: uniqueRelationships.length,
+    })
+
+    return result
+  }, 'getCompleteSchemaAction')
+}
+
+/**
+ * Get detailed metadata for a specific table
+ * Includes table size, index size, vacuum stats, and TOAST table info
+ */
+export async function getTableMetadataAction(
+  projectId: string,
+  tableName: string
+): Promise<ServerActionResponse<TableMetadata>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching table metadata', { projectId, tableName })
+
+    const metadata = await getTableMetadata(projectId, tableName)
+
+    logger.info('Retrieved table metadata', {
+      projectId,
+      tableName,
+      totalSize: metadata.totalSize,
+      rowCount: metadata.rowCountEstimate,
+    })
+
+    return metadata
+  }, 'getTableMetadataAction')
+}
+
+/**
+ * Get all constraints for a specific table
+ * Includes PRIMARY KEY, FOREIGN KEY, UNIQUE, and CHECK constraints with definitions
+ */
+export async function getTableConstraintsAction(
+  projectId: string,
+  tableName: string
+): Promise<ServerActionResponse<TableConstraint[]>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching table constraints', { projectId, tableName })
+
+    const constraints = await getTableConstraints(projectId, tableName)
+
+    logger.info('Retrieved table constraints', {
+      projectId,
+      tableName,
+      constraintCount: constraints.length,
+    })
+
+    return constraints
+  }, 'getTableConstraintsAction')
+}
+
+/**
+ * Get all indexes for a specific table
+ * Includes index type, columns, size, and full definition
+ */
+export async function getTableIndexesAction(
+  projectId: string,
+  tableName: string
+): Promise<ServerActionResponse<TableIndex[]>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching table indexes', { projectId, tableName })
+
+    const indexes = await getTableIndexes(projectId, tableName)
+
+    logger.info('Retrieved table indexes', {
+      projectId,
+      tableName,
+      indexCount: indexes.length,
+    })
+
+    return indexes
+  }, 'getTableIndexesAction')
+}
+
+/**
+ * Get table dependencies (foreign key relationships)
+ * Shows both tables that reference this table and tables this table references
+ */
+export async function getTableDependenciesAction(
+  projectId: string,
+  tableName: string
+): Promise<ServerActionResponse<TableDependency[]>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching table dependencies', { projectId, tableName })
+
+    const dependencies = await getTableDependencies(projectId, tableName)
+
+    logger.info('Retrieved table dependencies', {
+      projectId,
+      tableName,
+      dependencyCount: dependencies.length,
+    })
+
+    return dependencies
+  }, 'getTableDependenciesAction')
+}
+
+/**
+ * Get database-wide statistics
+ * Includes total size, largest tables, index counts, and data-to-index ratio
+ */
+export async function getDatabaseStatisticsAction(
+  projectId: string
+): Promise<ServerActionResponse<DatabaseStatistics>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Fetching database statistics', { projectId })
+
+    const statistics = await getDatabaseStatistics(projectId)
+
+    logger.info('Retrieved database statistics', {
+      projectId,
+      totalSize: statistics.totalSize,
+      totalTables: statistics.totalTables,
+      totalIndexes: statistics.totalIndexes,
+      dataToIndexRatio: statistics.dataToIndexRatio.toFixed(2),
+    })
+
+    return statistics
+  }, 'getDatabaseStatisticsAction')
+}
+
+/**
+ * Generate CREATE TABLE DDL statement for a specific table
+ * Includes all columns, constraints, and indexes in properly formatted SQL
+ */
+export async function getTableDDLAction(
+  projectId: string,
+  tableName: string
+): Promise<ServerActionResponse<string>> {
+  return withServerAction(async () => {
+    const session = await requireAuth()
+    await requireProjectPermission(session.user.id, projectId, 'data.read')
+
+    logger.debug('Generating table DDL', { projectId, tableName })
+
+    // Get schema, constraints, and indexes
+    const [columns, constraints, indexes] = await Promise.all([
+      getTableSchema(projectId, tableName),
+      getTableConstraints(projectId, tableName),
+      getTableIndexes(projectId, tableName),
+    ])
+
+    // Build CREATE TABLE statement
+    let ddl = `CREATE TABLE "${tableName}" (\n`
+
+    // Add columns
+    const columnDefs = columns.map((col) => {
+      let def = `  "${col.columnName}" ${col.dataType}`
+
+      if (!col.isNullable) {
+        def += ' NOT NULL'
+      }
+
+      if (col.defaultValue) {
+        def += ` DEFAULT ${col.defaultValue}`
+      }
+
+      return def
+    })
+
+    ddl += columnDefs.join(',\n')
+
+    // Add constraints (excluding indexes which we'll add separately)
+    const constraintDefs = constraints
+      .filter((c) => c.constraintType !== 'PRIMARY KEY' || !c.definition.includes('USING INDEX'))
+      .map((c) => {
+        return `  CONSTRAINT "${c.constraintName}" ${c.definition}`
+      })
+
+    if (constraintDefs.length > 0) {
+      ddl += ',\n' + constraintDefs.join(',\n')
+    }
+
+    ddl += '\n);\n'
+
+    // Add indexes (excluding primary key indexes)
+    const indexDefs = indexes
+      .filter((idx) => !idx.isPrimary)
+      .map((idx) => idx.indexDef)
+      .join(';\n')
+
+    if (indexDefs) {
+      ddl += '\n' + indexDefs + ';'
+    }
+
+    logger.info('Generated table DDL', {
+      projectId,
+      tableName,
+      columnCount: columns.length,
+      constraintCount: constraints.length,
+      indexCount: indexes.length,
+    })
+
+    return ddl
+  }, 'getTableDDLAction')
+}
