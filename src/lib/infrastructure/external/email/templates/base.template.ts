@@ -3,6 +3,8 @@
  * Provides consistent styling and layout for all email templates
  */
 
+import { getUrl } from '@/lib/utils/environment'
+
 export interface BaseTemplateProps {
   title: string
   content: string
@@ -17,7 +19,7 @@ export function baseEmailTemplate(props: BaseTemplateProps): string {
     content,
     footerText = 'This is an automated email. Please do not reply to this email.',
     appName = 'Zuno Marketplace Admin',
-    appUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    appUrl = process.env.BETTER_AUTH_URL || getUrl(),
   } = props
 
   return `

@@ -25,7 +25,7 @@
  * ```
  */
 
-import { isDevelopment } from './environment'
+import { isProduction } from './environment'
 import { logger } from './logger'
 
 /**
@@ -128,7 +128,7 @@ export function sanitizeError(error: unknown): {
 
   // Regular Error instances: hide details in production
   if (error instanceof Error) {
-    const message = isDevelopment()
+    const message = !isProduction()
       ? error.message
       : 'An unexpected error occurred'
 

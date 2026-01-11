@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/components/providers/auth-provider'
 import { signUpWithRole } from '@/app/actions/auth/auth'
 import { logger } from '@/lib/utils/logger'
+import { isProduction } from '@/lib/utils/environment'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -74,7 +75,7 @@ export default function SignupPage() {
       }
 
       // Show success message with role info in development
-      if (process.env.NODE_ENV === 'development' && result.user?.role === 'super_admin') {
+      if (!isProduction() && result.user?.role === 'super_admin') {
         toast.success('Account created with super_admin role')
       } else {
         toast.success('Account created successfully')

@@ -8,6 +8,7 @@ import { IEmailService } from '@/lib/core/domain/interfaces/email.service.interf
 import { MailpitSmtpService } from './mailpit-smtp.service'
 import { ResendService } from './resend.service'
 import { logger } from '@/lib/utils/logger'
+import { isProduction } from '@/lib/utils/environment'
 
 export type EmailProvider = 'mailpit' | 'resend' | 'auto'
 
@@ -48,7 +49,7 @@ export class EmailServiceFactory {
    * Auto-detect email provider based on environment
    */
   private static autoDetectProvider(): IEmailService {
-    const isDevelopment = process.env.NODE_ENV === 'development'
+    const isDevelopmentEnv = !isProduction()
     const hasResendKey = !!process.env.RESEND_API_KEY
     const forceProvider = process.env.EMAIL_PROVIDER as EmailProvider | undefined
 
@@ -64,7 +65,7 @@ export class EmailServiceFactory {
     }
 
     // Auto-detect based on environment
-    if (isDevelopment) {
+    if (isDevelopmentEnv) {
       logger.info('Using Mailpit SMTP (development environment)')
       return new MailpitSmtpService()
     }

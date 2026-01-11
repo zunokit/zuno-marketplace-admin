@@ -2,12 +2,13 @@
 
 /**
  * Global Error Boundary
- * Catches errors in the root layout and provides fallback UI
- * This wraps the entire application including layout.tsx
+ * Catches errors in root layout and provides fallback UI
+ * This wraps entire application including layout.tsx
  */
 
 import { useEffect } from 'react'
 import { logger } from '@/lib/utils/logger'
+import { isProduction } from '@/lib/utils/environment'
 
 export default function GlobalError({
   error,
@@ -55,7 +56,7 @@ export default function GlobalError({
             }}>
               A critical error occurred. Please try refreshing the page.
             </p>
-            {process.env.NODE_ENV === 'development' && (
+            {!isProduction() && (
               <pre style={{
                 backgroundColor: '#f3f4f6',
                 padding: '1rem',

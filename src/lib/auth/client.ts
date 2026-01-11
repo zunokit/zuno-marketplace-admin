@@ -1,12 +1,10 @@
-import { createAuthClient } from 'better-auth/client'
-import { organizationClient, adminClient } from 'better-auth/client/plugins'
+import { createAuthClient } from "better-auth/client";
+import { organizationClient, adminClient } from "better-auth/client/plugins";
+import { getUrl } from "@/lib/utils/environment";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'http://localhost:3000',
-  plugins: [
-    organizationClient(),
-    adminClient(),
-  ],
-})
+  baseURL: getUrl(),
+  plugins: [organizationClient(), adminClient()],
+});
 
-export type AuthClient = typeof authClient
+export type AuthClient = typeof authClient;
