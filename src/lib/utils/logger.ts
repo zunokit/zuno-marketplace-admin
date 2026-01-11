@@ -4,7 +4,7 @@
  * Never use console.log directly - always use this logger
  */
 
-import { isDevelopment, isServer } from './environment'
+import { isProduction, isServer } from './environment'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
@@ -13,7 +13,7 @@ interface LogContext {
 }
 
 class Logger {
-  private isDevelopment = isDevelopment()
+  private isDevelopment = !isProduction()
   private isServer = isServer()
 
   /**

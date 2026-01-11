@@ -3,7 +3,7 @@
  * Provides consistent styling and layout for all email templates
  */
 
-import { getUrl } from '@/lib/utils/production'
+import { getUrl } from '@/lib/utils/environment'
 
 export interface BaseTemplateProps {
   title: string

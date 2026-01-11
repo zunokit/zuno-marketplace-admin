@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { AlertCircle, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
+import { isProduction } from '@/lib/utils/environment'
 
 interface ErrorBoundaryUIProps {
   error: Error & { digest?: string }
@@ -42,7 +43,7 @@ export function ErrorBoundaryUI({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {process.env.NODE_ENV === 'development' && (
+          {!isProduction() && (
             <div className="bg-muted p-4 rounded-md">
               <p className="text-sm font-mono text-destructive break-all">
                 {error.message}

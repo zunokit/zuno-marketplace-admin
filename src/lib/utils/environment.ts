@@ -14,7 +14,14 @@ export function isDevelopment(): boolean {
  * Check if running in production environment
  */
 export function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production'
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -50,5 +57,28 @@ export function getEnvironment(): 'development' | 'production' | 'test' {
  * Debug mode is enabled in development or when DEBUG env var is set
  */
 export function isDebugMode(): boolean {
-  return isDevelopment() || process.env.DEBUG === 'true'
+  return !isProduction() || process.env.DEBUG === 'true'
+}
+
+/**
+ * Get application URL based on environment
+ * Checks for environment variables, falls back to Vercel URL, then localhost
+ */
+export function getUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  }
+
+  if (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
+  ) {
+    const vercelUrl =
+      process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+    if (vercelUrl && vercelUrl.trim() !== "") {
+      return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
+    }
+  }
+
+  return "http://localhost:3000";
 }

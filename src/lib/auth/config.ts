@@ -6,7 +6,7 @@ import * as schema from "@/lib/infrastructure/database/schemas";
 import { getEmailService } from "@/lib/infrastructure/external/email";
 import { invitationEmailTemplate } from "@/lib/infrastructure/external/email/templates";
 import { logger } from "@/lib/utils/logger";
-import { getUrl } from "@/lib/utils/production";
+import { getUrl } from "@/lib/utils/environment";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

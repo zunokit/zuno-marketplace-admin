@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { organization as organizationTable } from "@/lib/infrastructure/database/schemas";
 import { decrypt } from "@/lib/crypto";
 import { logger } from "@/lib/utils/logger";
+import { isProduction } from "@/lib/utils/environment";
 import { errorHandler, NotFoundError } from "@/lib/utils/error-handler";
 import { DATABASE_CONFIG } from "@/lib/constants/database";
 
@@ -84,7 +85,7 @@ export async function getProjectDb(projectId: string) {
     max: DATABASE_CONFIG.POOL.MAX_CONNECTIONS,
     idle_timeout: DATABASE_CONFIG.POOL.IDLE_TIMEOUT,
     connect_timeout: DATABASE_CONFIG.POOL.CONNECT_TIMEOUT,
-    debug: process.env.NODE_ENV !== "production",
+    debug: !isProduction(),
   });
 
   // Create Drizzle instance

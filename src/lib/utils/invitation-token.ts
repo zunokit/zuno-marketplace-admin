@@ -4,7 +4,7 @@
  */
 
 import { randomBytes, createHash } from "crypto";
-import { getUrl } from "./production";
+import { getUrl } from "./environment";
 
 /**
  * Generate a secure invitation token
