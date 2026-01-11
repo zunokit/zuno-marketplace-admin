@@ -6,14 +6,7 @@ import * as schema from "@/lib/infrastructure/database/schemas";
 import { getEmailService } from "@/lib/infrastructure/external/email";
 import { invitationEmailTemplate } from "@/lib/infrastructure/external/email/templates";
 import { logger } from "@/lib/utils/logger";
-
-if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error("BETTER_AUTH_SECRET is not defined");
-}
-
-if (!process.env.BETTER_AUTH_URL) {
-  throw new Error("BETTER_AUTH_URL is not defined");
-}
+import { getUrl } from "@/lib/utils/production";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -29,8 +22,8 @@ export const auth = betterAuth({
     },
   }),
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
-  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",") || [],
+  baseURL: getUrl(),
+  trustedOrigins: [getUrl()],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to true in production
@@ -56,9 +49,12 @@ export const auth = betterAuth({
 
           // Extract organization name and inviter name from Better Auth data structure
           const organizationName = data.organization?.name || "Organization";
-          const inviterName = data.inviter?.user?.name || data.inviter?.user?.email || "Team Admin";
+          const inviterName =
+            data.inviter?.user?.name ||
+            data.inviter?.user?.email ||
+            "Team Admin";
           // Build invitation URL from environment
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const baseUrl = getUrl();
           const invitationUrl = `${baseUrl}/invite/accept?id=${data.invitation.id}`;
 
           const { html, text, subject } = invitationEmailTemplate({
@@ -77,10 +73,14 @@ export const auth = betterAuth({
           });
 
           if (!result.success) {
-            logger.error("Failed to send Better Auth invitation email", result.error, {
-              email: data.email,
-              organizationName,
-            });
+            logger.error(
+              "Failed to send Better Auth invitation email",
+              result.error,
+              {
+                email: data.email,
+                organizationName,
+              }
+            );
             throw new Error("Failed to send invitation email");
           }
 
