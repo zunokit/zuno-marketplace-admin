@@ -1,11 +1,5 @@
 name: Keepalive Services
 
-on:
-  schedule:
-    # Run every 12 hours at 6 AM and 6 PM UTC
-    - cron: '0 6,18 * * *'
-  workflow_dispatch: # Manual trigger for testing
-
 jobs:
   keepalive:
     name: Ping Health Endpoint
