@@ -1,11 +1,13 @@
-name: Supabase Keep Alive
+name: Supabase Keep Alive + Backup
 
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
+  actions: write
 
 concurrency:
   group: supabase-keepalive
@@ -14,16 +16,14 @@ concurrency:
 jobs:
   keepalive:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      SUPABASE_FUNCTION_URLS: ${{ secrets.SUPABASE_FUNCTION_URLS }}
 
     steps:
-      - name: Install PostgreSQL client
+      - name: Install dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
@@ -37,81 +37,102 @@ jobs:
           psql -v ON_ERROR_STOP=1 -qAt "$SUPABASE_DB_URL" -c 'SELECT 1;'
           echo "✅ DB ping OK"
 
-      # ── 2. REST API — GET /rest/v1/ (counts as real API request) ─────────
-      - name: Ping Supabase REST API
-        if: ${{ env.SUPABASE_URL != '' && env.SUPABASE_ANON_KEY != '' }}
+      # ── 2. REST API ping (no key needed, 401 still counts) ───────────────
+      - name: Ping Supabase REST / Auth / Storage
+        if: ${{ env.SUPABASE_URL != '' }}
         shell: bash
         run: |
           set -euo pipefail
-          TOKEN="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_ANON_KEY}}"
+          BASE="$SUPABASE_URL"
+          ANON="${SUPABASE_ANON_KEY:-}"
 
-          echo "📡 Pinging REST API root..."
-          STATUS=$(curl -sS -m 20 \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${TOKEN}" \
-            -o /dev/null -w '%{http_code}' \
-            "${SUPABASE_URL}/rest/v1/")
-          echo "REST API status: $STATUS"
-          [[ "$STATUS" -ge 200 && "$STATUS" -lt 500 ]] || { echo "❌ REST ping failed"; exit 1; }
-
-      # ── 3. Auth API ping ─────────────────────────────────────────────────
-      - name: Ping Supabase Auth API
-        if: ${{ env.SUPABASE_URL != '' && env.SUPABASE_ANON_KEY != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "🔐 Pinging Auth API..."
-          STATUS=$(curl -sS -m 20 \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -o /dev/null -w '%{http_code}' \
-            "${SUPABASE_URL}/auth/v1/health")
-          echo "Auth API status: $STATUS"
-          [[ "$STATUS" -ge 200 && "$STATUS" -lt 500 ]] || echo "⚠️ Auth ping returned $STATUS (non-fatal)"
-
-      # ── 4. Storage API ping ──────────────────────────────────────────────
-      - name: Ping Supabase Storage API
-        if: ${{ env.SUPABASE_URL != '' && env.SUPABASE_ANON_KEY != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "🗄️ Pinging Storage API..."
-          STATUS=$(curl -sS -m 20 \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -o /dev/null -w '%{http_code}' \
-            "${SUPABASE_URL}/storage/v1/bucket")
-          echo "Storage API status: $STATUS"
-          [[ "$STATUS" -ge 200 && "$STATUS" -lt 500 ]] || echo "⚠️ Storage ping returned $STATUS (non-fatal)"
-
-      # ── 5. Edge Functions (optional) ─────────────────────────────────────
-      - name: Trigger Edge Function(s)
-        if: ${{ env.SUPABASE_FUNCTION_URLS != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t URLS < <(printf '%s\n' "$SUPABASE_FUNCTION_URLS" | tr ',' '\n')
-          TOKEN="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_ANON_KEY:-}}"
-          for url in "${URLS[@]}"; do
-            url="$(echo "$url" | xargs)"
-            [ -z "$url" ] && continue
-            echo "⚡ Pinging function: ${url}"
-            if [ -n "$TOKEN" ]; then
+          ping_url() {
+            local label="$1" url="$2"
+            local STATUS
+            if [ -n "$ANON" ]; then
               STATUS=$(curl -sS -m 20 \
-                -H "Authorization: Bearer $TOKEN" \
+                -H "apikey: ${ANON}" \
+                -H "Authorization: Bearer ${ANON}" \
                 -o /dev/null -w '%{http_code}' "$url")
             else
               STATUS=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' "$url")
             fi
-            if [[ "$STATUS" -ge 200 && "$STATUS" -lt 400 ]]; then
-              echo "✅ Function responded: $STATUS"
-            else
-              echo "❌ Function ping failed: $STATUS" >&2
-              exit 1
-            fi
-          done
+            echo "${label}: ${STATUS}"
+          }
 
-      # ── 6. Summary ───────────────────────────────────────────────────────
-      - name: Keep-alive summary
+          ping_url "📡 REST"    "${BASE}/rest/v1/"
+          ping_url "🔐 Auth"    "${BASE}/auth/v1/health"
+          ping_url "🗄️ Storage" "${BASE}/storage/v1/status"
+
+      # ── 3. Backup all tables → JSON ──────────────────────────────────────
+      - name: Discover all user tables
+        if: ${{ env.SUPABASE_DB_URL != '' }}
+        id: tables
         shell: bash
         run: |
-          echo "🎉 Keep-alive complete at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          set -euo pipefail
+          TABLES=$(psql -qAt "$SUPABASE_DB_URL" <<'SQL'
+            SELECT tablename
+            FROM pg_tables
+            WHERE schemaname = 'public'
+            ORDER BY tablename;
+          SQL
+          )
+          echo "Found tables:"
+          echo "$TABLES"
+          # Pass as newline-separated list to next step via file
+          echo "$TABLES" > /tmp/tables.txt
+
+      - name: Export each table to JSON
+        if: ${{ env.SUPABASE_DB_URL != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          TIMESTAMP=$(date -u '+%Y%m%d_%H%M%S')
+
+          while IFS= read -r table; do
+            [ -z "$table" ] && continue
+            echo "📦 Exporting: $table"
+
+            # Export as JSON array via psql
+            psql -qAt "$SUPABASE_DB_URL" \
+              -c "SELECT json_agg(row_to_json(t)) FROM (SELECT * FROM public.\"${table}\") t;" \
+              | sed 's/^null$/[]/' \
+              > "backup/${table}.json"
+
+            ROWS=$(jq 'length' "backup/${table}.json" 2>/dev/null || echo "?")
+            echo "  → ${ROWS} rows"
+          done < /tmp/tables.txt
+
+          # Write manifest
+          cat > backup/_manifest.json << EOF
+          {
+            "timestamp": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+            "tables": $(jq -Rs '[split("\n")[] | select(length>0)]' /tmp/tables.txt),
+            "files": $(ls backup/*.json | xargs -I{} basename {} | jq -Rs '[split("\n")[] | select(length>0)]')
+          }
+          EOF
+
+          echo "✅ Backup complete — $(ls backup/*.json | wc -l) files"
+
+      # ── 4. Upload backup as GitHub Artifact ──────────────────────────────
+      - name: Upload backup artifact
+        if: ${{ env.SUPABASE_DB_URL != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_number }}-${{ github.run_attempt }}
+          path: backup/
+          retention-days: 7
+          if-no-files-found: error
+
+      # ── 5. Summary ───────────────────────────────────────────────────────
+      - name: Summary
+        shell: bash
+        run: |
+          echo "🎉 Keep-alive + backup complete at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          if [ -d backup ]; then
+            echo ""
+            echo "📁 Backed up files:"
+            ls -lh backup/
+          fi
