@@ -21,7 +21,7 @@ export async function GET() {
 
     // If we get here, database is responsive
     return NextResponse.json({ status: 'healthy' }, { status: 200 })
-  } catch (error) {
+  } catch {
     // Any error = unhealthy (never crash)
     return NextResponse.json({ status: 'unhealthy' }, { status: 200 })
   }
