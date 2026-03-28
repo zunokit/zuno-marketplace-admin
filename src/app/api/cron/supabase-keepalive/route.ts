@@ -191,11 +191,8 @@ async function buildBackupManifest(connectionString: string): Promise<BackupResu
         }[]>`
           SELECT
             COUNT(*)::int AS row_count,
-            COALESCE(octet_length(json_agg(row_to_json(t))::text), 2)::int AS payload_bytes
-          FROM (
-            SELECT *
-            FROM public.${sql(tablename)}
-          ) AS t
+            COALESCE(SUM(pg_column_size(to_jsonb(t))), 0)::bigint AS payload_bytes
+          FROM public.${sql(tablename)} AS t
         `
 
         const rowCount = Number(rowCountValue ?? 0)
