@@ -1,0 +1,71 @@
+# Local development infrastructure for zuno-marketplace-admin.
+#
+# Brings up:
+#   * postgres - admin DB (Drizzle, Better-Auth tables, encrypted project DB URLs)
+#   * mailpit  - local SMTP for testing emails (Better-Auth invitations, etc.)
+#
+# Next.js dev server stays on the host so HMR and Turbopack are fast.
+# An opt-in `app` service is included for full-container runs.
+#
+# Usage:
+#   docker compose up -d                   # postgres + mailpit
+#   docker compose --profile app up -d     # also run the dashboard in a container
+#   docker compose down                    # stop
+#   docker compose down -v                 # stop AND wipe volumes
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: admin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zuno_user
+      POSTGRES_PASSWORD: zuno_pass
+      POSTGRES_DB: zuno_admin
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zuno_user -d zuno_admin"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: admin-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    environment:
+      MP_MAX_MESSAGES: 5000
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: admin-app
+    profiles: ["app"]
+    env_file:
+      - .env.local
+    environment:
+      DATABASE_URL: postgresql://zuno_user:zuno_pass@postgres:5432/zuno_admin
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      BETTER_AUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:
