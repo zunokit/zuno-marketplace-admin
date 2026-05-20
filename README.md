@@ -19,7 +19,21 @@ A scalable, multi-project admin dashboard built with Next.js 16, designed to man
 ### Prerequisites
 - Node.js 18+
 - pnpm (recommended)
-- PostgreSQL database (Supabase recommended)
+- PostgreSQL database (Supabase in production; local Docker for dev — see below)
+- Docker + Docker Compose (for the local dev stack)
+
+### Local Docker Dev Stack
+
+A `docker-compose.yml` is included that brings up:
+- `admin-postgres` — Postgres 16 on `localhost:5433` (db `zuno_admin`, user/pass `zuno_user`/`zuno_pass`).
+- `admin-mailpit` — Mailpit on `localhost:1025` (SMTP) and `localhost:8025` (web UI) for testing Better-Auth invitation / verification emails.
+
+```bash
+docker compose up -d                       # postgres + mailpit
+docker compose --profile app up -d         # ALSO run the Next.js app in a container
+docker compose down                        # stop
+docker compose down -v                     # also wipe the postgres volume
+```
 
 ### Installation
 
@@ -31,19 +45,24 @@ cd zuno-marketplace-admin
 # Install dependencies
 pnpm install
 
+# Start local Postgres + Mailpit
+docker compose up -d
+
 # Setup environment
 cp .env.example .env.local
-# Edit .env.local with your credentials
+# .env.example already points DATABASE_URL at the local Docker Postgres on 5433
+# Edit .env.local for Supabase / Better-Auth / Encryption keys
 
 # Setup database
 pnpm db:push
-psql $DATABASE_URL < src/lib/db/rls-policies.sql
+psql "$DATABASE_URL" < src/lib/db/rls-policies.sql
 
 # Start development server
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and sign up to create your first account.
+Open [http://localhost:8025](http://localhost:8025) (Mailpit) to see outbound dev emails.
 
 ## 📚 Documentation
 
