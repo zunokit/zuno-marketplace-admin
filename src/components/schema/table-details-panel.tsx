@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import { CopyButton } from '@/components/copy-button'
 import {
   Database,
   Hash,
@@ -29,12 +29,9 @@ import {
   Zap,
   GitBranch,
   Code2,
-  Copy,
-  Check,
   Info,
   Calendar,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 
@@ -52,7 +49,6 @@ export function TableDetailsPanel({ projectId, table, schema: _schema }: TableDe
   const [dependencies, setDependencies] = useState<TableDependency[]>([])
   const [ddl, setDdl] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
-  const [copiedDdl, setCopiedDdl] = useState(false)
 
   useEffect(() => {
     const loadTableDetails = async () => {
@@ -92,17 +88,6 @@ export function TableDetailsPanel({ projectId, table, schema: _schema }: TableDe
 
     loadTableDetails()
   }, [projectId, table.tableName])
-
-  const copyDdl = async () => {
-    try {
-      await navigator.clipboard.writeText(ddl)
-      setCopiedDdl(true)
-      toast.success('DDL copied to clipboard')
-      setTimeout(() => setCopiedDdl(false), 2000)
-    } catch {
-      toast.error('Failed to copy DDL')
-    }
-  }
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Never'
@@ -519,24 +504,16 @@ export function TableDetailsPanel({ projectId, table, schema: _schema }: TableDe
                   <Code2 className="h-4 w-4" />
                   CREATE TABLE Statement
                 </h3>
-                <Button
+                <CopyButton
+                  value={ddl}
                   variant="outline"
-                  size="sm"
-                  onClick={copyDdl}
+                  label="Copy DDL"
+                  tooltipLabel="Copy CREATE TABLE statement"
+                  tooltipCopiedLabel="Copied"
+                  toastMessage="DDL copied to clipboard"
+                  errorToastMessage="Failed to copy DDL"
                   disabled={!ddl || isLoading}
-                >
-                  {copiedDdl ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 mr-1.5" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 mr-1.5" />
-                      Copy DDL
-                    </>
-                  )}
-                </Button>
+                />
               </div>
 
               {isLoading ? (
